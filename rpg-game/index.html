@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legend of Code - yamayama</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="game-container">
+
+        <!-- Map Screen -->
+        <div id="map-screen" class="screen active">
+            <div class="map-view">
+                <div id="player"></div>
+            </div>
+            <div class="message-window">
+                <p>ほうこうキー で いどう。<br>モンスター が あらわれる かも？</p>
+            </div>
+        </div>
+
+        <!-- Battle Screen -->
+        <div id="battle-screen" class="screen">
+            <div class="battle-view">
+                <div class="enemy" id="enemy">
+                    <div class="enemy-visual"></div>
+                </div>
+            </div>
+            <div class="status-window">
+                <p>勇者 LV:10 HP:<span id="hp-val">100</span>/100</p>
+            </div>
+            <div class="battle-ui-bottom">
+                <div class="command-window">
+                    <ul>
+                        <li class="selected" data-cmd="fight">たたかう</li>
+                        <li data-cmd="spell">じゅもん</li>
+                        <li data-cmd="run">にげる</li>
+                    </ul>
+                </div>
+                <div class="message-window battle-message">
+                    <p id="msg-text">スライム・バグ が あらわれた！</p>
+                </div>
+            </div>
+        </div>
+
+        <a href="../index.html" class="back-link">← ぼうけん を おわる</a>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>

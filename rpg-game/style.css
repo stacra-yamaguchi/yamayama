@@ -1,0 +1,160 @@
+:root {
+    --bg-color: #000;
+    --border-color: #fff;
+    --text-color: #fff;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #111;
+    color: var(--text-color);
+    font-family: 'DotGothic16', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.game-container {
+    width: 640px;
+    height: 480px;
+    background-color: var(--bg-color);
+    position: relative;
+    border: 4px solid #333;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+/* Screens */
+.screen {
+    display: none;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+}
+
+.screen.active {
+    display: flex;
+}
+
+/* Map Style */
+.map-view {
+    flex: 1;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    position: relative;
+    background-image: url('map_bg.png');
+    background-size: 200%; /* Zoomed in for scrolling effect */
+    background-position: center;
+    background-repeat: no-repeat;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
+#player {
+    width: 32px;
+    height: 32px;
+    background-color: transparent;
+    background-image: url('hero.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    
+    /* Center the player in the view */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    
+    z-index: 10;
+}
+
+/* Battle Style */
+.battle-view {
+    flex: 1;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #000;
+}
+
+.enemy-visual {
+    width: 120px;
+    height: 120px;
+    background-color: #ff5252;
+    clip-path: polygon(
+        20% 0%, 80% 0%, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0% 80%, 0% 20%
+    );
+    animation: bounce 1s infinite alternate;
+}
+
+@keyframes bounce {
+    from { transform: translateY(0); }
+    to { transform: translateY(-10px); }
+}
+
+.status-window {
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+.battle-ui-bottom {
+    display: flex;
+    gap: 10px;
+    height: 120px;
+}
+
+.command-window {
+    width: 150px;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    padding: 10px;
+}
+
+.command-window ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.command-window li {
+    padding: 5px 10px;
+    cursor: pointer;
+    position: relative;
+    font-size: 18px;
+}
+
+.command-window li.selected::before {
+    content: '▶';
+    position: absolute;
+    left: -5px;
+}
+
+.message-window {
+    flex: 1;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    padding: 10px;
+    font-size: 18px;
+    line-height: 1.6;
+}
+
+.back-link {
+    position: absolute;
+    bottom: -30px;
+    left: 0;
+    color: #888;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.back-link:hover {
+    color: #fff;
+}

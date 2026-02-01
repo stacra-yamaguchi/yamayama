@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galactic Shooter - yamayama</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="game-container">
+        <h1 class="game-title">GALACTIC SHOOTER</h1>
+        <div class="score-display">SCORE: <span id="score">0</span></div>
+        <div class="game-over" id="game-over">
+            <h2>GAME OVER</h2>
+            <p>Score: <span id="final-score">0</span></p>
+            <button onclick="resetGame()">PLAY AGAIN</button>
+        </div>
+        <canvas id="gameCanvas" width="600" height="800"></canvas>
+        <p class="controls">MOVE: Arrow Keys | SHOOT: Space</p>
+        <a href="../index.html" class="back-link">← Return to Base</a>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>
