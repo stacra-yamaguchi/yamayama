@@ -31,14 +31,14 @@ const HORIZONTAL_MAP = [
 const VERTICAL_MAP = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     [1,3,2,2,2,2,2,2,2,2,2,2,3,1],
-    [1,2,1,1,1,2,1,1,2,1,1,1,2,1],
+    [1,2,1,1,1,2,1,1,2,1,1,2,2,1], // Row 2: Opened up wall at col 11
     [1,2,2,2,2,2,1,1,2,2,2,2,2,1],
     [1,1,1,2,1,1,1,1,1,1,2,1,1,1],
     [1,2,2,2,2,2,2,2,2,2,2,2,2,1],
     [1,2,1,1,1,2,1,1,2,1,1,1,2,1],
     [1,2,2,2,2,2,1,1,2,2,2,2,2,1],
-    [1,1,1,1,1,2,2,2,2,1,1,1,1,1], // Row 8: Opened wall above gate (indices 6,7)
-    [1,2,2,2,2,2,4,4,2,2,2,2,2,1], // Row 9
+    [1,1,1,1,1,2,2,2,2,1,1,1,1,1],
+    [1,2,2,2,2,2,4,4,2,2,2,2,2,1], 
     [1,2,1,1,1,2,5,5,2,1,1,1,2,1],
     [1,2,1,1,1,2,5,5,2,1,1,1,2,1],
     [1,2,2,2,2,2,0,0,2,2,2,2,2,1],
@@ -134,23 +134,21 @@ function resetPositions() {
     
     if (isMobile) {
         pacman.x = 6.5 * TILE_SIZE; pacman.y = 22.5 * TILE_SIZE;
-        // Target is center of Row 8 (8.5 * TILE_SIZE)
         const exitY = 8.5 * TILE_SIZE;
         ghosts = [
-            { x: 6.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'red', dx: 0, dy: -1, spawnX: 6.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 0, speed: ghostSpeed, status: 'active', exitTarget: {x: 6.5 * TILE_SIZE, y: exitY} },
-            { x: 5.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'pink', dx: 0, dy: 0, spawnX: 5.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 60, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 6.5 * TILE_SIZE, y: exitY} },
-            { x: 7.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'cyan', dx: 0, dy: 0, spawnX: 7.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 120, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 6.5 * TILE_SIZE, y: exitY} },
-            { x: 6.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'orange', dx: 0, dy: 0, spawnX: 6.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 180, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 6.5 * TILE_SIZE, y: exitY} }
+            { x: 6.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'red', dx: 0, dy: -1, spawnX: 6.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 0, speed: ghostSpeed, status: 'active', exitTarget: {x: 6.5 * TILE_SIZE, y: exitY}, lastPos: {x:0,y:0}, stuckFrames: 0 },
+            { x: 5.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'pink', dx: 0, dy: 0, spawnX: 5.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 60, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 6.5 * TILE_SIZE, y: exitY}, lastPos: {x:0,y:0}, stuckFrames: 0 },
+            { x: 7.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'cyan', dx: 0, dy: 0, spawnX: 7.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 120, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 6.5 * TILE_SIZE, y: exitY}, lastPos: {x:0,y:0}, stuckFrames: 0 },
+            { x: 6.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'orange', dx: 0, dy: 0, spawnX: 6.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 180, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 6.5 * TILE_SIZE, y: exitY}, lastPos: {x:0,y:0}, stuckFrames: 0 }
         ];
     } else {
         pacman.x = 13.5 * TILE_SIZE; pacman.y = 10.5 * TILE_SIZE;
-        // Target is center of Row 4 (4.5 * TILE_SIZE)
         const exitY = 4.5 * TILE_SIZE;
         ghosts = [
-            { x: 13.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'red', dx: 0, dy: -1, spawnX: 13.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 0, speed: ghostSpeed, status: 'active', exitTarget: {x: 13.5 * TILE_SIZE, y: exitY} },
-            { x: 12.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'pink', dx: 0, dy: 0, spawnX: 12.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 60, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 13.5 * TILE_SIZE, y: exitY} },
-            { x: 14.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'cyan', dx: 0, dy: 0, spawnX: 14.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 120, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 13.5 * TILE_SIZE, y: exitY} },
-            { x: 13.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'orange', dx: 0, dy: 0, spawnX: 13.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 180, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 13.5 * TILE_SIZE, y: exitY} }
+            { x: 13.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'red', dx: 0, dy: -1, spawnX: 13.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 0, speed: ghostSpeed, status: 'active', exitTarget: {x: 13.5 * TILE_SIZE, y: exitY}, lastPos: {x:0,y:0}, stuckFrames: 0 },
+            { x: 12.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'pink', dx: 0, dy: 0, spawnX: 12.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 60, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 13.5 * TILE_SIZE, y: exitY}, lastPos: {x:0,y:0}, stuckFrames: 0 },
+            { x: 14.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'cyan', dx: 0, dy: 0, spawnX: 14.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 120, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 13.5 * TILE_SIZE, y: exitY}, lastPos: {x:0,y:0}, stuckFrames: 0 },
+            { x: 13.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'orange', dx: 0, dy: 0, spawnX: 13.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 180, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 13.5 * TILE_SIZE, y: exitY}, lastPos: {x:0,y:0}, stuckFrames: 0 }
         ];
     }
     pacman.direction = 0; pacman.nextDirection = 0;
@@ -294,6 +292,8 @@ function update() {
         // --- Status Logic ---
         if (ghost.status === 'in_house') {
             ghost.status = 'exiting';
+            ghost.stuckFrames = 0;
+            ghost.lastPos = {x: ghost.x, y: ghost.y};
         }
         
         if (ghost.status === 'exiting') {
@@ -302,19 +302,19 @@ function update() {
             const dx = tx - ghost.x;
             const dy = ty - ghost.y;
             const dist = Math.hypot(dx, dy);
+            const speed = ghost.speed;
             
-            if (dist < 2) {
+            // Wall-Ignoring Movement (Noclip)
+            if (dist < speed) {
                 ghost.x = tx; ghost.y = ty;
                 ghost.dx = (Math.random() < 0.5 ? 1 : -1); ghost.dy = 0;
                 ghost.status = 'active';
+                ghost.stuckFrames = 0;
             } else {
-                // Ensure movement speed doesn't overshoot
-                const speed = ghost.speed;
-                const moveDist = Math.min(dist, speed);
                 const angle = Math.atan2(dy, dx);
-                ghost.x += Math.cos(angle) * moveDist;
-                ghost.y += Math.sin(angle) * moveDist;
-                
+                ghost.x += Math.cos(angle) * speed;
+                ghost.y += Math.sin(angle) * speed;
+                // Update visuals
                 if (Math.abs(dx) > Math.abs(dy)) { ghost.dx = Math.sign(dx); ghost.dy = 0; }
                 else { ghost.dx = 0; ghost.dy = Math.sign(dy); }
             }
@@ -322,6 +322,23 @@ function update() {
         }
         
         // --- Active Logic ---
+        // Stuck Detection
+        const movedDist = Math.hypot(ghost.x - ghost.lastPos.x, ghost.y - ghost.lastPos.y);
+        if (movedDist < 0.2) {
+             ghost.stuckFrames++;
+        } else {
+             ghost.stuckFrames = 0;
+        }
+        ghost.lastPos = {x: ghost.x, y: ghost.y};
+
+        if (ghost.stuckFrames > 180) { // 3 seconds stuck
+             ghost.status = 'exiting'; // Reset to exiting mode
+             ghost.x = ghost.spawnX; 
+             ghost.y = ghost.spawnY;
+             ghost.stuckFrames = 0;
+             return;
+        }
+
         const gCenterX = Math.floor(ghost.x / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
         const gCenterY = Math.floor(ghost.y / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
         if (Math.abs(ghost.x - gCenterX) <= ghost.speed && Math.abs(ghost.y - gCenterY) <= ghost.speed) {
@@ -334,18 +351,15 @@ function update() {
                 const rand = validDirs[Math.floor(Math.random() * validDirs.length)];
                 ghost.dx = rand.dx; ghost.dy = rand.dy; ghost.x = gCenterX; ghost.y = gCenterY;
             } else {
-                // Dead end or Stuck logic
                 const reverseDir = {dx: -ghost.dx, dy: -ghost.dy};
                 if (canMove(gCenterX, gCenterY, reverseDir.dx, reverseDir.dy, true)) {
                     ghost.dx = reverseDir.dx; ghost.dy = reverseDir.dy;
                 } else {
-                    // Force find ANY direction
                     const anyDirs = dirs.filter(d => canMove(gCenterX, gCenterY, d.dx, d.dy, true));
                     if (anyDirs.length > 0) {
                         const rand = anyDirs[Math.floor(Math.random() * anyDirs.length)];
                         ghost.dx = rand.dx; ghost.dy = rand.dy;
                     } else {
-                        // Truly stuck?? Reverse anyway to try to wiggle out
                         ghost.dx *= -1; ghost.dy *= -1;
                     }
                 }
