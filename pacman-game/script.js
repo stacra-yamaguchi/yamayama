@@ -31,14 +31,14 @@ const HORIZONTAL_MAP = [
 const VERTICAL_MAP = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     [1,3,2,2,2,2,2,2,2,2,2,2,3,1],
-    [1,2,1,1,1,2,1,1,2,1,1,2,2,1], // Row 2: Opened up wall at col 11
+    [1,2,1,1,1,2,1,1,2,1,1,2,2,1],
     [1,2,2,2,2,2,1,1,2,2,2,2,2,1],
     [1,1,1,2,1,1,1,1,1,1,2,1,1,1],
     [1,2,2,2,2,2,2,2,2,2,2,2,2,1],
     [1,2,1,1,1,2,1,1,2,1,1,1,2,1],
     [1,2,2,2,2,2,1,1,2,2,2,2,2,1],
     [1,1,1,1,1,2,2,2,2,1,1,1,1,1],
-    [1,2,2,2,2,2,4,4,2,2,2,2,2,1], 
+    [1,2,2,2,2,2,4,4,2,2,2,2,2,1],
     [1,2,1,1,1,2,5,5,2,1,1,1,2,1],
     [1,2,1,1,1,2,5,5,2,1,1,1,2,1],
     [1,2,2,2,2,2,0,0,2,2,2,2,2,1],
@@ -76,7 +76,7 @@ const pacman = {
     radius: 13,
     direction: 0,
     nextDirection: 0,
-    speed: 2.5,
+    speed: 3, // Changed to integer for precision
     mouthOpen: 0,
     mouthSpeed: 0.2
 };
@@ -130,7 +130,7 @@ function initGame() {
 
 function resetPositions() {
     const isMobile = COLS === 14;
-    const ghostSpeed = 1.6;
+    const ghostSpeed = 2; // Changed to integer for precision
     
     if (isMobile) {
         pacman.x = 6.5 * TILE_SIZE; pacman.y = 22.5 * TILE_SIZE;
@@ -160,7 +160,8 @@ function updateLivesUI() {
 }
 
 function canMove(x, y, dx, dy, isGhost = false) {
-    const margin = 8;
+    // Reduced margin to prevent false positives/negatives with walls
+    const margin = 2; 
     const checkPoints = [];
     const radius = 12;
     if (dx !== 0) {
@@ -304,8 +305,8 @@ function update() {
             const dist = Math.hypot(dx, dy);
             const speed = ghost.speed;
             
-            // Wall-Ignoring Movement (Noclip)
             if (dist < speed) {
+                // SNAP to exact target
                 ghost.x = tx; ghost.y = ty;
                 ghost.dx = (Math.random() < 0.5 ? 1 : -1); ghost.dy = 0;
                 ghost.status = 'active';
@@ -314,7 +315,6 @@ function update() {
                 const angle = Math.atan2(dy, dx);
                 ghost.x += Math.cos(angle) * speed;
                 ghost.y += Math.sin(angle) * speed;
-                // Update visuals
                 if (Math.abs(dx) > Math.abs(dy)) { ghost.dx = Math.sign(dx); ghost.dy = 0; }
                 else { ghost.dx = 0; ghost.dy = Math.sign(dy); }
             }
@@ -322,17 +322,12 @@ function update() {
         }
         
         // --- Active Logic ---
-        // Stuck Detection
         const movedDist = Math.hypot(ghost.x - ghost.lastPos.x, ghost.y - ghost.lastPos.y);
-        if (movedDist < 0.2) {
-             ghost.stuckFrames++;
-        } else {
-             ghost.stuckFrames = 0;
-        }
+        if (movedDist < 0.2) ghost.stuckFrames++; else ghost.stuckFrames = 0;
         ghost.lastPos = {x: ghost.x, y: ghost.y};
 
-        if (ghost.stuckFrames > 180) { // 3 seconds stuck
-             ghost.status = 'exiting'; // Reset to exiting mode
+        if (ghost.stuckFrames > 180) {
+             ghost.status = 'exiting'; 
              ghost.x = ghost.spawnX; 
              ghost.y = ghost.spawnY;
              ghost.stuckFrames = 0;
@@ -341,34 +336,46 @@ function update() {
 
         const gCenterX = Math.floor(ghost.x / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
         const gCenterY = Math.floor(ghost.y / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
+        
+        // --- CRITICAL SNAP LOGIC ---
+        // If getting close to the center of a tile, force snap to center axis to prevent drift
         if (Math.abs(ghost.x - gCenterX) <= ghost.speed && Math.abs(ghost.y - gCenterY) <= ghost.speed) {
+            ghost.x = gCenterX; 
+            ghost.y = gCenterY;
+            
+            // Re-evaluate direction at intersection
             const dirs = [{dx:1, dy:0}, {dx:-1, dy:0}, {dx:0, dy:1}, {dx:0, dy:-1}];
             const validDirs = dirs.filter(d => {
                 if (d.dx === -ghost.dx && d.dy === -ghost.dy) return false;
                 return canMove(gCenterX, gCenterY, d.dx, d.dy, true);
             });
+            
             if (validDirs.length > 0) {
                 const rand = validDirs[Math.floor(Math.random() * validDirs.length)];
-                ghost.dx = rand.dx; ghost.dy = rand.dy; ghost.x = gCenterX; ghost.y = gCenterY;
+                ghost.dx = rand.dx; ghost.dy = rand.dy; 
             } else {
+                // Dead end logic
                 const reverseDir = {dx: -ghost.dx, dy: -ghost.dy};
                 if (canMove(gCenterX, gCenterY, reverseDir.dx, reverseDir.dy, true)) {
                     ghost.dx = reverseDir.dx; ghost.dy = reverseDir.dy;
                 } else {
                     const anyDirs = dirs.filter(d => canMove(gCenterX, gCenterY, d.dx, d.dy, true));
                     if (anyDirs.length > 0) {
-                        const rand = anyDirs[Math.floor(Math.random() * anyDirs.length)];
-                        ghost.dx = rand.dx; ghost.dy = rand.dy;
+                        ghost.dx = anyDirs[0].dx; ghost.dy = anyDirs[0].dy;
                     } else {
                         ghost.dx *= -1; ghost.dy *= -1;
                     }
                 }
-                ghost.x = gCenterX; ghost.y = gCenterY;
             }
         }
+        
         if (canMove(ghost.x, ghost.y, ghost.dx, ghost.dy, true)) {
-            ghost.x += ghost.dx * ghost.speed; ghost.y += ghost.dy * ghost.speed;
-        } else { ghost.x = gCenterX; ghost.y = gCenterY; }
+            ghost.x += ghost.dx * ghost.speed; 
+            ghost.y += ghost.dy * ghost.speed;
+        } else {
+            // If movement blocked (but not at center), force snap to center immediately to unstuck
+            ghost.x = gCenterX; ghost.y = gCenterY;
+        }
         
         if (Math.hypot(ghost.x - pacman.x, ghost.y - pacman.y) < 22) {
             if (superModeTimer > 0) {
