@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Tetris - yamayama Works</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="game-container">
+        <header class="game-header">
+            <h1 class="game-title">NEON TETRIS</h1>
+            <a href="../index.html" class="back-link">← Back to Portfolio</a>
+        </header>
+
+        <div class="game-content">
+            <div class="game-board-container">
+                <canvas id="tetris" width="240" height="400"></canvas>
+                <div id="game-over-modal" class="modal hidden">
+                    <div class="modal-content">
+                        <h2>GAME OVER</h2>
+                        <p>Score: <span id="final-score">0</span></p>
+                        <button id="restart-btn" class="btn">Play Again</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="game-sidebar">
+                <div class="info-panel">
+                    <h3>Score</h3>
+                    <div id="score">0</div>
+                </div>
+                <div class="info-panel">
+                    <h3>Level</h3>
+                    <div id="level">1</div>
+                </div>
+                <div class="info-panel">
+                    <h3>Next</h3>
+                    <canvas id="next-piece" width="100" height="100"></canvas>
+                </div>
+                <div class="controls-info">
+                    <h3>Controls</h3>
+                    <ul class="controls-list">
+                        <li><span>← →</span> Move</li>
+                        <li><span>↑</span> Rotate</li>
+                        <li><span>↓</span> Soft Drop</li>
+                        <li><span>Space</span> Hard Drop</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>
