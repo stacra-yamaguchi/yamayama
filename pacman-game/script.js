@@ -74,7 +74,7 @@ const pacman = {
     radius: 13,
     direction: 0,
     nextDirection: 0,
-    speed: 4,
+    speed: 3, // 速度調整 4 -> 3
     mouthOpen: 0,
     mouthSpeed: 0.2
 };
@@ -98,23 +98,19 @@ function initGame() {
         COLS = 28; ROWS = 14;
         mapLayout = HORIZONTAL_MAP.map(row => [...row]);
     }
-    
     canvas.width = COLS * TILE_SIZE;
     canvas.height = ROWS * TILE_SIZE;
-    
     score = 0;
     lives = 3;
     scoreEl.innerText = score;
     updateLivesUI();
     resetPositions();
-    
     pelletsRemaining = 0;
     for(let r=0; r<ROWS; r++) {
         for(let c=0; c<COLS; c++) {
             if(mapLayout[r][c] === 2 || mapLayout[r][c] === 3) pelletsRemaining++;
         }
     }
-
     gameOverEl.style.display = 'none';
     gameWinEl.style.display = 'none';
     gameRunning = true;
@@ -126,21 +122,22 @@ function initGame() {
 
 function resetPositions() {
     const isMobile = COLS === 14;
+    // ghost.speed を 3 -> 2 に調整
     if (isMobile) {
         pacman.x = 6.5 * TILE_SIZE; pacman.y = 22.5 * TILE_SIZE;
         ghosts = [
-            { x: 6 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'red', dx: 1, dy: 0, spawnX: 6 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 0, speed: 3 },
-            { x: 7 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'pink', dx: -1, dy: 0, spawnX: 7 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 60, speed: 3 },
-            { x: 6 * TILE_SIZE, y: 10 * TILE_SIZE, color: 'cyan', dx: 0, dy: -1, spawnX: 6 * TILE_SIZE, spawnY: 10 * TILE_SIZE, wait: 120, speed: 3 },
-            { x: 7 * TILE_SIZE, y: 10 * TILE_SIZE, color: 'orange', dx: 0, dy: 1, spawnX: 7 * TILE_SIZE, spawnY: 10 * TILE_SIZE, wait: 180, speed: 3 }
+            { x: 6 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'red', dx: 1, dy: 0, spawnX: 6 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 0, speed: 2 },
+            { x: 7 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'pink', dx: -1, dy: 0, spawnX: 7 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 60, speed: 2 },
+            { x: 6 * TILE_SIZE, y: 10 * TILE_SIZE, color: 'cyan', dx: 0, dy: -1, spawnX: 6 * TILE_SIZE, spawnY: 10 * TILE_SIZE, wait: 120, speed: 2 },
+            { x: 7 * TILE_SIZE, y: 10 * TILE_SIZE, color: 'orange', dx: 0, dy: 1, spawnX: 7 * TILE_SIZE, spawnY: 10 * TILE_SIZE, wait: 180, speed: 2 }
         ];
     } else {
         pacman.x = 13.5 * TILE_SIZE; pacman.y = 10.5 * TILE_SIZE;
         ghosts = [
-            { x: 13 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'red', dx: 1, dy: 0, spawnX: 13 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 0, speed: 3 },
-            { x: 14 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'pink', dx: -1, dy: 0, spawnX: 14 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 60, speed: 3 },
-            { x: 13 * TILE_SIZE, y: 6 * TILE_SIZE, color: 'cyan', dx: 0, dy: -1, spawnX: 13 * TILE_SIZE, spawnY: 6 * TILE_SIZE, wait: 120, speed: 3 },
-            { x: 14 * TILE_SIZE, y: 6 * TILE_SIZE, color: 'orange', dx: 0, dy: 1, spawnX: 14 * TILE_SIZE, spawnY: 6 * TILE_SIZE, wait: 180, speed: 3 }
+            { x: 13 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'red', dx: 1, dy: 0, spawnX: 13 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 0, speed: 2 },
+            { x: 14 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'pink', dx: -1, dy: 0, spawnX: 14 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 60, speed: 2 },
+            { x: 13 * TILE_SIZE, y: 6 * TILE_SIZE, color: 'cyan', dx: 0, dy: -1, spawnX: 13 * TILE_SIZE, spawnY: 6 * TILE_SIZE, wait: 120, speed: 2 },
+            { x: 14 * TILE_SIZE, y: 6 * TILE_SIZE, color: 'orange', dx: 0, dy: 1, spawnX: 14 * TILE_SIZE, spawnY: 6 * TILE_SIZE, wait: 180, speed: 2 }
         ];
     }
     pacman.direction = 0; pacman.nextDirection = 0;
@@ -166,8 +163,9 @@ function canMove(x, y, dx, dy, isGhost = false) {
         const c = Math.floor(p.x / TILE_SIZE);
         const r = Math.floor(p.y / TILE_SIZE);
         const tile = mapLayout[r] ? mapLayout[r][c] : 1;
-        if (tile === 1 || tile === 5) return false;
-        if (tile === 4 && !isGhost) return false;
+        if (tile === 1) return false;
+        // ゴーストはタイル 5 (House) と 4 (Gate) を通行可能にする
+        if (!isGhost && (tile === 5 || tile === 4)) return false;
     }
     return true;
 }
@@ -193,7 +191,6 @@ function spawnFruit() {
 function update() {
     if (!gameRunning) return;
     if (superModeTimer > 0) superModeTimer--;
-
     if (!fruit.active) {
         if (Math.random() < 0.002) spawnFruit();
     } else {
@@ -203,10 +200,8 @@ function update() {
             fruit.active = false; score += 500; scoreEl.innerText = score;
         }
     }
-
     const centerX = Math.floor(pacman.x / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
     const centerY = Math.floor(pacman.y / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
-
     if (pacman.nextDirection !== pacman.direction) {
         if (isOpposite(pacman.nextDirection, pacman.direction)) {
             pacman.direction = pacman.nextDirection;
@@ -220,7 +215,6 @@ function update() {
             }
         }
     }
-
     const vec = getDirVec(pacman.direction);
     if (canMove(pacman.x, pacman.y, vec.dx, vec.dy)) {
         pacman.x += vec.dx * pacman.speed; pacman.y += vec.dy * pacman.speed;
@@ -234,7 +228,6 @@ function update() {
         pacman.mouthOpen += pacman.mouthSpeed;
         if (pacman.mouthOpen > 0.2 || pacman.mouthOpen < 0) pacman.mouthSpeed *= -1;
     } else { pacman.x = centerX; pacman.y = centerY; }
-
     const gridX = Math.floor(pacman.x / TILE_SIZE);
     const gridY = Math.floor(pacman.y / TILE_SIZE);
     if (mapLayout[gridY] && mapLayout[gridY][gridX] === 2) {
@@ -245,7 +238,6 @@ function update() {
     }
     scoreEl.innerText = score;
     if(pelletsRemaining <= 0) gameWin();
-
     ghosts.forEach(ghost => {
         if (ghost.wait > 0) { ghost.wait--; return; }
         const gCenterX = Math.floor(ghost.x / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
@@ -280,6 +272,28 @@ function drawWall(x, y) {
     ctx.strokeRect(x + 4, y + 4, TILE_SIZE - 8, TILE_SIZE - 8);
 }
 
+function drawFruit(x, y) {
+    // チェリーとイチゴを交互に出す (スコアに応じて変えるなど)
+    const isCherry = Math.floor(score / 500) % 2 === 0;
+    if (isCherry) {
+        // Cherry
+        ctx.fillStyle = '#ff0000';
+        ctx.beginPath(); ctx.arc(x - 5, y + 5, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x + 5, y + 5, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#228b22'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(x - 5, y + 5); ctx.quadraticCurveTo(x, y - 5, x, y - 10); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x + 5, y + 5); ctx.quadraticCurveTo(x, y - 5, x, y - 10); ctx.stroke();
+    } else {
+        // Strawberry
+        ctx.fillStyle = '#ff0000';
+        ctx.beginPath(); ctx.moveTo(x, y + 10); ctx.lineTo(x - 8, y - 2); ctx.quadraticCurveTo(x, y - 10, x + 8, y - 2); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        for(let i=-4; i<=4; i+=4) { for(let j=-2; j<=4; j+=3) { ctx.fillRect(x+i, y+j, 1, 1); } }
+        ctx.fillStyle = '#228b22';
+        ctx.beginPath(); ctx.arc(x, y - 8, 4, 0, Math.PI, true); ctx.fill();
+    }
+}
+
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for(let r=0; r<ROWS; r++) {
@@ -297,8 +311,7 @@ function draw() {
         }
     }
     if (fruit.active) {
-        ctx.fillStyle = '#ff0000'; ctx.shadowBlur = 10; ctx.shadowColor = '#ff5555';
-        ctx.beginPath(); ctx.arc(fruit.x, fruit.y, 10, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0;
+        drawFruit(fruit.x, fruit.y);
     }
     // Pacman
     ctx.fillStyle = superModeTimer > 0 ? (superModeTimer % 20 < 10 ? '#fff' : '#ffff00') : '#ffff00';
