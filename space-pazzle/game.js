@@ -138,30 +138,31 @@ function init() {
     // ハイスコアの表示
     document.getElementById('best-score').innerText = bestScore;
 
+    // マウス/タッチ操作の設定
     container.addEventListener('mousedown', (e) => {
+        if (isGameOver || isDropping) return;
         isDragging = true;
         movePlanet(e);
     });
     container.addEventListener('touchstart', (e) => {
         e.preventDefault();
+        if (isGameOver || isDropping) return;
         isDragging = true;
         const touch = e.touches[0];
-        movePlanet({ clientX: touch.clientX, target: container });
+        movePlanet({ clientX: touch.clientX });
     });
+
+    window.addEventListener('mousemove', (e) => {
+        if (isDragging) movePlanet(e);
+    });
+    window.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        const touch = e.touches[0];
+        movePlanet({ clientX: touch.clientX });
+    }, { passive: false });
 
     window.addEventListener('mouseup', handleRelease);
-    window.addEventListener('touchend', (e) => {
-        if (isDragging) {
-            handleRelease();
-        }
-    });
-
-    container.addEventListener('mousemove', movePlanet);
-    container.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        const touch = e.touches[0];
-        movePlanet({ clientX: touch.clientX, target: container });
-    });
+    window.addEventListener('touchend', handleRelease);
 
     Events.on(engine, 'collisionStart', handleCollision);
     Events.on(engine, 'afterUpdate', checkGameOver);
@@ -236,12 +237,14 @@ function spawnPlanet() {
 function movePlanet(e) {
     if (!currentPlanet || isDropping || isGameOver || !isDragging) return;
     
+    // キャンバスの位置を取得
     const container = document.getElementById('game-canvas-container');
     const rect = container.getBoundingClientRect();
     let x = e.clientX - rect.left;
     
     const radius = currentPlanet.circleRadius;
-    x = Math.max(radius, Math.min(canvasWidth - radius, x));
+    // 画面端の制限（マージンを持たせる）
+    x = Math.max(radius + 5, Math.min(canvasWidth - radius - 5, x));
     
     Body.setPosition(currentPlanet, { x: x, y: 80 });
 }
