@@ -27,6 +27,7 @@ let currentPlanet = null;
 let nextPlanetIdx = Math.floor(Math.random() * 3); // 最初は小さめ
 let score = 0;
 let bestScore = parseInt(localStorage.getItem('space-pazzle-best-score')) || 0;
+let bestDate = localStorage.getItem('space-pazzle-best-date') || '';
 let isGameOver = false;
 let isDropping = false;
 let isDragging = false;
@@ -170,6 +171,7 @@ function init() {
 
     // ハイスコアの表示
     document.getElementById('best-score').innerText = bestScore;
+    document.getElementById('best-date').innerText = bestDate;
 
     // マウス/タッチ操作の設定
     container.addEventListener('mousedown', (e) => {
@@ -333,8 +335,14 @@ function handleCollision(event) {
                 // ハイスコアの更新
                 if (score > bestScore) {
                     bestScore = score;
+                    const now = new Date();
+                    bestDate = `${now.getFullYear()}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                    
                     localStorage.setItem('space-pazzle-best-score', bestScore);
+                    localStorage.setItem('space-pazzle-best-date', bestDate);
+                    
                     document.getElementById('best-score').innerText = bestScore;
+                    document.getElementById('best-date').innerText = bestDate;
                 }
             }
         }
@@ -376,6 +384,7 @@ function endGame() {
     isGameOver = true;
     document.getElementById('final-score').innerText = score;
     document.getElementById('final-best').innerText = bestScore;
+    document.getElementById('final-best-date').innerText = bestDate;
     document.getElementById('game-over-screen').classList.remove('hidden');
     Runner.stop(runner);
 }
