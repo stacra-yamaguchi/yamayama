@@ -329,6 +329,9 @@ function handleCollision(event) {
                 score += nextPlanetData.score;
                 document.getElementById('score').innerText = score;
 
+                // 星座の更新チェック
+                updateConstellation();
+
                 // 合成エフェクトの生成
                 createMergeEffect(newX, newY, nextPlanetData.name);
 
@@ -393,6 +396,7 @@ function restartGame() {
     score = 0;
     isGameOver = false;
     effects = []; // エフェクトをクリア
+    updateConstellation(); // 星座を初期化
     document.getElementById('score').innerText = '0';
     document.getElementById('game-over-screen').classList.add('hidden');
     
@@ -441,6 +445,23 @@ function createMergeEffect(x, y, planetName) {
             duration: 800 + Math.random() * 400,
             startTime: startTime
         });
+    }
+}
+
+function updateConstellation() {
+    const overlay = document.getElementById('constellation-overlay');
+    if (!overlay) return;
+
+    overlay.className = ''; // 一旦クリア
+    
+    if (score < 500) {
+        overlay.classList.add('constellation-orion');
+    } else if (score < 1500) {
+        overlay.classList.add('constellation-cassiopeia');
+    } else if (score < 3000) {
+        overlay.classList.add('constellation-ursa');
+    } else {
+        overlay.classList.add('constellation-crux');
     }
 }
 
