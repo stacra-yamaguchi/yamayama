@@ -8,12 +8,21 @@ body {
     justify-content: center;
     align-items: center;
     height: 100vh;
+    min-height: 100vh;
     overflow: hidden;
+    flex-direction: column;
 }
 
 .game-container {
     position: relative;
     text-align: center;
+    width: 100%;
+    max-width: 600px;
+    padding: 10px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .game-title {
@@ -26,6 +35,11 @@ body {
 .score-display {
     font-size: 20px;
     margin-bottom: 15px;
+    text-shadow: 0 0 10px #00ffff, 0 0 20px rgba(0, 255, 255, 0.5);
+    background: rgba(0, 255, 255, 0.1);
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid rgba(0, 255, 255, 0.3);
 }
 
 canvas {
@@ -35,45 +49,83 @@ canvas {
     display: block;
     margin: 0 auto;
     max-width: 100%;
+    height: auto;
+    max-height: 60vh;
+    aspect-ratio: 3 / 4;
 }
 
-.game-over {
+.game-over, .overlay {
     display: none;
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.9);
-    border: 2px solid #ff0000;
-    padding: 30px;
-    z-index: 10;
-    color: #ff0000;
+    background: rgba(0, 0, 0, 0.95);
+    border: 2px solid #00ffff;
+    padding: 40px;
+    z-index: 20;
+    text-align: center;
+    min-width: 300px;
 }
+
+.overlay {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-color: #00ffff;
+    box-shadow: 0 0 30px #00ffff;
+}
+
+.game-over { border-color: #ff0000; color: #ff0000; box-shadow: 0 0 30px #ff0000; }
 
 .game-over h2 {
     font-size: 36px;
     margin-bottom: 20px;
 }
 
-.game-over button {
-    background: #ff0000;
+.game-over button, .overlay button {
+    background: #00ffff;
     color: #000;
     border: none;
-    padding: 10px 20px;
+    padding: 15px 30px;
     font-family: 'Orbitron', sans-serif;
-    font-size: 18px;
+    font-size: 20px;
     cursor: pointer;
     font-weight: bold;
+    letter-spacing: 2px;
+    transition: all 0.3s;
 }
 
-.game-over button:hover {
+.game-over button { background: #ff0000; }
+
+.game-over button:hover, .overlay button:hover {
     background: #fff;
+    transform: scale(1.1);
 }
 
 .controls {
     margin-top: 15px;
     color: #888;
     font-size: 12px;
+}
+
+.bottom-hud {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px;
+    margin-top: 10px;
+    border: 2px solid #5500ff;
+    box-shadow: 0 0 15px #5500ff;
+    border-radius: 10px;
+}
+
+.hud-item {
+    font-size: 20px;
+    color: #fff;
+    text-shadow: 0 0 8px #fff, 0 0 15px #00ffff;
+    font-weight: bold;
 }
 
 .back-link {

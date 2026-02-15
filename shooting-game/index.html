@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:,">
     <title>Galactic Shooter - yamayama</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
@@ -11,15 +12,22 @@
 
 <body>
     <div class="game-container">
+        <div id="start-overlay" class="overlay">
+            <button onclick="startGame()">MISSION START</button>
+        </div>
         <h1 class="game-title">GALACTIC SHOOTER</h1>
-        <div class="score-display">SCORE: <span id="score">0</span></div>
+        <div class="score-display">SCORE: <span id="score">0</span> | LIVES: <span id="lives">3</span></div>
         <div class="game-over" id="game-over">
             <h2>GAME OVER</h2>
             <p>Score: <span id="final-score">0</span></p>
             <button onclick="resetGame()">PLAY AGAIN</button>
         </div>
         <canvas id="gameCanvas" width="600" height="800"></canvas>
-        <p class="controls">MOVE: Arrow Keys | SHOOT: Space</p>
+        <div class="bottom-hud">
+            <div class="hud-item">LIVES: <span id="lives-bottom">3</span></div>
+            <div class="hud-item">BOMBERS: <span id="bombers-bottom">1</span></div>
+        </div>
+        <p class="controls">MOVE: Arrow Keys | SHOOT: Space | BOMBER: B</p>
         <a href="../index.html" class="back-link">← Return to Base</a>
     </div>
     <script src="script.js"></script>

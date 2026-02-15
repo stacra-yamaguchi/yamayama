@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>yamayama - Portfolio</title>
-    <meta name="description" content="クリエイター yamayama のポートフォリオサイトです。自己紹介と作品集を掲載しています。">
+    <title>Ai-Chan's Game Center</title>
+    <meta name="description" content="Ai-ChanのGame Centerへようこそ！楽しいゲームがいっぱい！">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -19,12 +19,10 @@
 
     <header class="header">
         <div class="container header-container">
-            <a href="#" class="logo">yamayama</a>
+            <a href="#" class="logo">Ai-Chan's GC</a>
             <nav class="nav">
                 <ul class="nav-list">
-                    <li><a href="#about" class="nav-link">About</a></li>
-                    <li><a href="#works" class="nav-link">Works</a></li>
-                    <li><a href="#contact" class="nav-link">Contact</a></li>
+                    <li><a href="#games" class="nav-link">Games</a></li>
                 </ul>
             </nav>
         </div>
@@ -33,31 +31,23 @@
     <main>
         <section id="hero" class="hero">
             <div class="container hero-container">
-                <h1 class="hero-title fade-in">Creative & Minimalist</h1>
-                <p class="hero-subtitle fade-in">Welcome to yamayama's world.</p>
-                <a href="#works" class="btn fade-in">View My Works</a>
-            </div>
-        </section>
-
-        <section id="about" class="section about">
-            <div class="container">
-                <h2 class="section-title fade-in-scroll">About Me</h2>
-                <div class="about-content fade-in-scroll">
-                    <p class="about-text">
-                        こんにちは、クリエイターの <strong>yamayama</strong> です。<br>
-                        シンプルで洗練されたデザインと、ユーザー体験を重視した実装を心がけています。<br>
-                        WEB制作、UIデザイン、グラフィックデザインなど、幅広く活動しています。<br>
-                        常に新しい技術や表現を学び、形にすることに情熱を注いでいます。
-                    </p>
+                <div class="hero-content">
+                    <h1 class="hero-title fade-in">Ai-Chan's<br>Game Center</h1>
+                    <p class="hero-subtitle fade-in">Let's Play Together!</p>
+                    <a href="#games" class="btn fade-in">Game Start</a>
+                </div>
+                <div class="hero-image fade-in">
+                    <img src="images/aichan-eSports.png" alt="Ai-Chan">
                 </div>
             </div>
         </section>
 
-        <section id="works" class="section works">
+
+        <section id="games" class="section works">
             <div class="container">
-                <h2 class="section-title fade-in-scroll">My Works</h2>
+                <h2 class="section-title fade-in-scroll">Game List</h2>
                 <div class="works-grid">
-                    <!-- Project 0: Space Puzzle -->
+                    <!-- Project 1: Space Puzzle -->
                     <article class="work-card fade-in-scroll">
                         <div class="work-image-wrapper">
                             <a href="space-pazzle/index.html">
@@ -76,7 +66,64 @@
                         </div>
                     </article>
 
-                    <!-- Project 1 -->
+                    <!-- Project 2: Tetris -->
+                    <article class="work-card fade-in-scroll">
+                        <div class="work-image-wrapper">
+                            <a href="tetris-game/index.html">
+                                <img src="images/neon_tetris.png" alt="Neon Tetris" class="work-image"
+                                    id="img-project-tetris">
+                            </a>
+                        </div>
+                        <div class="work-content">
+                            <h3 class="work-title"><a href="tetris-game/index.html"
+                                    style="text-decoration: none; color: inherit;">Neon Tetris</a></h3>
+                            <p class="work-description">
+                                モダンなネオンデザインのテトリスゲーム。<br>
+                                HTML5 CanvasとJavaScriptで実装されたクラシックパズル。
+                            </p>
+                            <a href="tetris-game/index.html" class="work-link">プレイする &rarr;</a>
+                        </div>
+                    </article>
+
+                    <!-- Project 3: Pac-Man -->
+                    <article class="work-card fade-in-scroll">
+                        <div class="work-image-wrapper">
+                            <a href="pacman-game/index.html">
+                                <img src="images/pacman_neo.png" alt="Pac-Man Clone" class="work-image"
+                                    id="img-project-pacman">
+                            </a>
+                        </div>
+                        <div class="work-content">
+                            <h3 class="work-title"><a href="pacman-game/index.html"
+                                    style="text-decoration: none; color: inherit;">Pac-Man Clone</a></h3>
+                            <p class="work-description">
+                                迷路を駆け巡るアーケードスタイルのドットイートゲーム。<br>
+                                グリッドベースの移動とゴーストAIを実装。
+                            </p>
+                            <a href="pacman-game/index.html" class="work-link">プレイする &rarr;</a>
+                        </div>
+                    </article>
+
+                    <!-- Project 4: Galactic Shooter -->
+                    <article class="work-card fade-in-scroll">
+                        <div class="work-image-wrapper">
+                            <a href="shooting-game/index.html">
+                                <img src="images/shooter_thumbnail.png" alt="Galactic Shooter" class="work-image"
+                                    id="img-project-shooter">
+                            </a>
+                        </div>
+                        <div class="work-content">
+                            <h3 class="work-title"><a href="shooting-game/index.html"
+                                    style="text-decoration: none; color: inherit;">Galactic Shooter</a></h3>
+                            <p class="work-description">
+                                宇宙空間を舞台にしたクラシックな縦スクロールシューティング。<br>
+                                Canvas APIによる描画とパーティクルエフェクト。
+                            </p>
+                            <a href="shooting-game/index.html" class="work-link">発進する &rarr;</a>
+                        </div>
+                    </article>
+
+                    <!-- Project 5: Ping Pong -->
                     <article class="work-card fade-in-scroll">
                         <div class="work-image-wrapper">
                             <a href="ping-pong/index.html">
@@ -95,7 +142,7 @@
                         </div>
                     </article>
 
-                    <!-- Project 2 -->
+                    <!-- Project 6: Legend of Code -->
                     <article class="work-card fade-in-scroll">
                         <div class="work-image-wrapper">
                             <a href="rpg-game/index.html">
@@ -113,74 +160,10 @@
                             <a href="rpg-game/index.html" class="work-link">冒険に出る &rarr;</a>
                         </div>
                     </article>
-
-                    <!-- Project 3 -->
-                    <article class="work-card fade-in-scroll">
-                        <div class="work-image-wrapper">
-                            <a href="shooting-game/index.html">
-                                <img src="https://placehold.co/600x400/000000/00ffff/png?text=Galactic+Shooter"
-                                    alt="Galactic Shooter" class="work-image" id="img-project-shooter">
-                            </a>
-                        </div>
-                        <div class="work-content">
-                            <h3 class="work-title"><a href="shooting-game/index.html"
-                                    style="text-decoration: none; color: inherit;">Galactic Shooter</a></h3>
-                            <p class="work-description">
-                                宇宙空間を舞台にしたクラシックな縦スクロールシューティング。<br>
-                                Canvas APIによる描画とパーティクルエフェクト。
-                            </p>
-                            <a href="shooting-game/index.html" class="work-link">発進する &rarr;</a>
-                        </div>
-                    </article>
-
-                    <!-- Project 4: Pac-Man -->
-                    <article class="work-card fade-in-scroll">
-                        <div class="work-image-wrapper">
-                            <a href="pacman-game/index.html">
-                                <img src="https://placehold.co/600x400/ffff00/000000/png?text=Pac-Man"
-                                    alt="Pac-Man Clone" class="work-image" id="img-project-pacman">
-                            </a>
-                        </div>
-                        <div class="work-content">
-                            <h3 class="work-title"><a href="pacman-game/index.html"
-                                    style="text-decoration: none; color: inherit;">Pac-Man Clone</a></h3>
-                            <p class="work-description">
-                                迷路を駆け巡るアーケードスタイルのドットイートゲーム。<br>
-                                グリッドベースの移動とゴーストAIを実装。
-                            </p>
-                            <a href="pacman-game/index.html" class="work-link">プレイする &rarr;</a>
-                        </div>
-                    </article>
-
-                    <!-- Project 5: Tetris -->
-                    <article class="work-card fade-in-scroll">
-                        <div class="work-image-wrapper">
-                            <a href="tetris-game/index.html">
-                                <img src="https://placehold.co/600x400/1a1a2e/00ffff/png?text=Neon+Tetris"
-                                    alt="Neon Tetris" class="work-image" id="img-project-tetris">
-                            </a>
-                        </div>
-                        <div class="work-content">
-                            <h3 class="work-title"><a href="tetris-game/index.html"
-                                    style="text-decoration: none; color: inherit;">Neon Tetris</a></h3>
-                            <p class="work-description">
-                                モダンなネオンデザインのテトリスゲーム。<br>
-                                HTML5 CanvasとJavaScriptで実装されたクラシックパズル。
-                            </p>
-                            <a href="tetris-game/index.html" class="work-link">プレイする &rarr;</a>
-                        </div>
-                    </article>
                 </div>
             </div>
         </section>
 
-        <section id="contact" class="section contact">
-            <div class="container">
-                <h2 class="section-title fade-in-scroll">Contact</h2>
-                <p class="contact-text fade-in-scroll">制作のご依頼やご相談は、お気軽にお問い合わせください。</p>
-                <a href="mailto:hello@example.com" class="btn btn-outline fade-in-scroll">Get in Touch</a>
-            </div>
-        </section>
     </main>
 
     <footer class="footer">
