@@ -9,24 +9,24 @@ const winScoreEl = document.getElementById('win-score');
 
 const TILE_SIZE = 32;
 const ROWS = 14;
-const COLS = 14;
+const COLS = 28;
 
-// 0: Empty, 1: Wall, 2: Pellet, 3: Power Pellet
+// 0: Empty, 1: Wall, 2: Pellet, 3: Power Pellet, 4: House Gate, 5: Monster House
 const INITIAL_MAP = [
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-    [1,3,2,2,2,2,1,1,2,2,2,2,3,1],
-    [1,2,1,1,1,2,1,1,2,1,1,1,2,1],
-    [1,2,1,1,1,2,1,1,2,1,1,1,2,1],
-    [1,2,2,2,2,2,2,2,2,2,2,2,2,1],
-    [1,2,1,2,1,1,1,1,1,1,2,1,2,1],
-    [1,2,1,2,2,2,1,1,2,2,2,1,2,1],
-    [1,2,1,1,1,2,1,1,2,1,1,1,2,1],
-    [1,2,2,2,1,2,1,1,2,1,2,2,2,1],
-    [1,1,1,2,2,2,0,0,2,2,2,1,1,1],
-    [1,2,2,2,1,1,1,1,1,1,2,2,2,1],
-    [1,2,1,1,1,2,2,2,2,1,1,1,2,1],
-    [1,3,2,2,2,2,1,1,2,2,2,2,3,1],
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,3,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,3,1],
+    [1,2,1,1,1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,2,1],
+    [1,2,1,1,1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,2,1],
+    [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+    [1,2,1,2,1,1,1,1,1,1,2,1,1,4,4,1,1,2,1,1,1,1,1,1,2,1,2,1],
+    [1,2,1,2,2,2,1,1,2,2,2,1,5,5,5,5,1,2,2,2,1,1,2,2,2,1,2,1],
+    [1,2,1,1,1,2,1,1,2,1,1,1,5,5,5,5,1,1,1,2,1,1,2,1,1,1,2,1],
+    [1,2,2,2,1,2,1,1,2,1,2,2,1,1,1,1,2,2,1,2,1,1,2,1,2,2,2,1],
+    [1,1,1,2,2,2,0,0,2,2,2,2,2,2,2,2,2,2,2,2,0,0,2,2,2,1,1,1],
+    [1,2,2,2,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,2,2,1],
+    [1,2,1,1,1,2,2,2,2,1,1,1,2,1,1,2,1,1,1,2,2,2,2,1,1,1,2,1],
+    [1,3,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,3,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 ];
 
 let mapLayout = [];
@@ -36,12 +36,13 @@ let superModeTimer = 0;
 let animationId;
 let gameRunning = false;
 let pelletsRemaining = 0;
+let fruit = { x: -1, y: -1, active: false, timer: 0 };
 
 const pacman = {
     x: 0,
     y: 0,
     radius: 13,
-    direction: 0, // 0: Right, 1: Down, 2: Left, 3: Up
+    direction: 0,
     nextDirection: 0,
     speed: 2,
     mouthOpen: 0,
@@ -50,7 +51,6 @@ const pacman = {
 
 let ghosts = [];
 
-// Input handle
 document.addEventListener('keydown', (e) => {
     if(!gameRunning) return;
     if (e.key === 'ArrowRight' || e.key === 'd') pacman.nextDirection = 0;
@@ -65,9 +65,8 @@ function initGame() {
     lives = 3;
     scoreEl.innerText = score;
     updateLivesUI();
-    
     resetPositions();
-
+    
     pelletsRemaining = 0;
     for(let r=0; r<ROWS; r++) {
         for(let c=0; c<COLS; c++) {
@@ -78,21 +77,24 @@ function initGame() {
     gameOverEl.style.display = 'none';
     gameWinEl.style.display = 'none';
     gameRunning = true;
+    fruit.active = false;
+    fruit.timer = 0;
     if (animationId) cancelAnimationFrame(animationId);
     update();
 }
 
 function resetPositions() {
-    pacman.x = 6.5 * TILE_SIZE;
-    pacman.y = 9.5 * TILE_SIZE;
+    pacman.x = 13.5 * TILE_SIZE;
+    pacman.y = 10.5 * TILE_SIZE;
     pacman.direction = 0;
     pacman.nextDirection = 0;
     superModeTimer = 0;
     
     ghosts = [
-        { x: 6.5 * TILE_SIZE, y: 4.5 * TILE_SIZE, color: 'red', dx: 1, dy: 0, spawnX: 6.5 * TILE_SIZE, spawnY: 4.5 * TILE_SIZE },
-        { x: 7.5 * TILE_SIZE, y: 4.5 * TILE_SIZE, color: 'pink', dx: -1, dy: 0, spawnX: 7.5 * TILE_SIZE, spawnY: 4.5 * TILE_SIZE },
-        { x: 5.5 * TILE_SIZE, y: 4.5 * TILE_SIZE, color: 'cyan', dx: 0, dy: -1, spawnX: 5.5 * TILE_SIZE, spawnY: 4.5 * TILE_SIZE }
+        { x: 13 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'red', dx: 1, dy: 0, spawnX: 13 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 0 },
+        { x: 14 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'pink', dx: -1, dy: 0, spawnX: 14 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 60 },
+        { x: 13 * TILE_SIZE, y: 6 * TILE_SIZE, color: 'cyan', dx: 0, dy: -1, spawnX: 13 * TILE_SIZE, spawnY: 6 * TILE_SIZE, wait: 120 },
+        { x: 14 * TILE_SIZE, y: 6 * TILE_SIZE, color: 'orange', dx: 0, dy: 1, spawnX: 14 * TILE_SIZE, spawnY: 6 * TILE_SIZE, wait: 180 }
     ];
 }
 
@@ -100,7 +102,7 @@ function updateLivesUI() {
     livesEl.innerText = "❤️".repeat(lives);
 }
 
-function canMove(x, y, dx, dy) {
+function canMove(x, y, dx, dy, isGhost = false) {
     const margin = 6;
     const checkPoints = [];
     if (dx !== 0) {
@@ -113,7 +115,9 @@ function canMove(x, y, dx, dy) {
     for (const p of checkPoints) {
         const c = Math.floor(p.x / TILE_SIZE);
         const r = Math.floor(p.y / TILE_SIZE);
-        if (mapLayout[r] && mapLayout[r][c] === 1) return false;
+        const tile = mapLayout[r] ? mapLayout[r][c] : 1;
+        if (tile === 1 || tile === 5) return false;
+        if (tile === 4 && !isGhost) return false; // Gates only for ghosts
     }
     return true;
 }
@@ -130,10 +134,30 @@ function isOpposite(d1, d2) {
     return Math.abs(d1 - d2) === 2;
 }
 
+function spawnFruit() {
+    fruit.x = 13.5 * TILE_SIZE;
+    fruit.y = 10.5 * TILE_SIZE;
+    fruit.active = true;
+    fruit.timer = 600; // 10 seconds
+}
+
 function update() {
     if (!gameRunning) return;
 
     if (superModeTimer > 0) superModeTimer--;
+
+    // Fruit logic
+    if (!fruit.active) {
+        if (Math.random() < 0.002) spawnFruit(); // Approx every 8-10 secs
+    } else {
+        fruit.timer--;
+        if (fruit.timer <= 0) fruit.active = false;
+        if (Math.hypot(pacman.x - fruit.x, pacman.y - fruit.y) < 20) {
+            fruit.active = false;
+            score += 500;
+            scoreEl.innerText = score;
+        }
+    }
 
     // PACMAN TURN
     if (pacman.nextDirection !== pacman.direction) {
@@ -168,9 +192,6 @@ function update() {
         }
         pacman.mouthOpen += pacman.mouthSpeed;
         if (pacman.mouthOpen > 0.2 || pacman.mouthOpen < 0) pacman.mouthSpeed *= -1;
-    } else {
-        pacman.x = Math.floor(pacman.x / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
-        pacman.y = Math.floor(pacman.y / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
     }
 
     // EAT
@@ -180,13 +201,18 @@ function update() {
         mapLayout[gridY][gridX] = 0; score += 10; pelletsRemaining--;
     } else if (mapLayout[gridY] && mapLayout[gridY][gridX] === 3) {
         mapLayout[gridY][gridX] = 0; score += 50; pelletsRemaining--;
-        superModeTimer = 600; // ~10 seconds
+        superModeTimer = 600;
     }
     scoreEl.innerText = score;
     if(pelletsRemaining <= 0) gameWin();
 
     // GHOSTS
     ghosts.forEach(ghost => {
+        if (ghost.wait > 0) {
+             ghost.wait--;
+             return;
+        }
+        
         const gCenterX = Math.floor(ghost.x / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
         const gCenterY = Math.floor(ghost.y / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
 
@@ -194,9 +220,7 @@ function update() {
             const dirs = [{dx:1, dy:0}, {dx:-1, dy:0}, {dx:0, dy:1}, {dx:0, dy:-1}];
             const validDirs = dirs.filter(d => {
                 if (d.dx === -ghost.dx && d.dy === -ghost.dy) return false;
-                const tx = Math.floor((gCenterX + d.dx * TILE_SIZE) / TILE_SIZE);
-                const ty = Math.floor((gCenterY + d.dy * TILE_SIZE) / TILE_SIZE);
-                return mapLayout[ty] && mapLayout[ty][tx] !== 1;
+                return canMove(gCenterX, gCenterY, d.dx, d.dy, true);
             });
             if (validDirs.length > 0) {
                 const rand = validDirs[Math.floor(Math.random() * validDirs.length)];
@@ -212,12 +236,12 @@ function update() {
         if (Math.hypot(ghost.x - pacman.x, ghost.y - pacman.y) < 20) {
             if (superModeTimer > 0) {
                 ghost.x = ghost.spawnX; ghost.y = ghost.spawnY;
+                ghost.wait = 180; // 3 seconds penalty
                 score += 200; scoreEl.innerText = score;
             } else {
                 lives--;
                 updateLivesUI();
-                if (lives <= 0) gameOver();
-                else resetPositions();
+                if (lives <= 0) gameOver(); else resetPositions();
             }
         }
     });
@@ -226,34 +250,59 @@ function update() {
     animationId = requestAnimationFrame(update);
 }
 
+function drawWall(x, y) {
+    ctx.strokeStyle = '#3333ff';
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = '#0000ff';
+    ctx.strokeRect(x + 4, y + 4, TILE_SIZE - 8, TILE_SIZE - 8);
+    ctx.shadowBlur = 0;
+}
+
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for(let r=0; r<ROWS; r++) {
         for(let c=0; c<COLS; c++) {
             const x = c * TILE_SIZE; const y = r * TILE_SIZE;
-            if (mapLayout[r][c] === 1) {
-                ctx.fillStyle = '#0000ff'; ctx.fillRect(x+2, y+2, TILE_SIZE-4, TILE_SIZE-4);
-            } else if (mapLayout[r][c] === 2) {
+            const tile = mapLayout[r][c];
+            if (tile === 1) {
+                drawWall(x, y);
+            } else if (tile === 2) {
                 ctx.fillStyle = '#ffb8ae'; ctx.beginPath(); ctx.arc(x + TILE_SIZE/2, y + TILE_SIZE/2, 3, 0, Math.PI*2); ctx.fill();
-            } else if (mapLayout[r][c] === 3) {
+            } else if (tile === 3) {
                 ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x + TILE_SIZE/2, y + TILE_SIZE/2, 8, 0, Math.PI*2); ctx.fill();
+            } else if (tile === 4) {
+                ctx.strokeStyle = '#ff00ff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y + TILE_SIZE/2); ctx.lineTo(x + TILE_SIZE, y + TILE_SIZE/2); ctx.stroke();
             }
         }
     }
 
+    if (fruit.active) {
+        ctx.fillStyle = '#ff0000';
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#ff5555';
+        ctx.beginPath(); ctx.arc(fruit.x, fruit.y, 10, 0, Math.PI*2); ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+
     // Pacman
     ctx.fillStyle = superModeTimer > 0 ? (superModeTimer % 20 < 10 ? '#fff' : '#ffff00') : '#ffff00';
+    ctx.shadowBlur = 10; ctx.shadowColor = ctx.fillStyle;
     ctx.beginPath();
     const mouthAngle = pacman.mouthOpen * Math.PI;
     const rotation = [0, Math.PI/2, Math.PI, -Math.PI/2][pacman.direction];
     ctx.translate(pacman.x, pacman.y); ctx.rotate(rotation);
     ctx.arc(0, 0, pacman.radius, mouthAngle, 2 * Math.PI - mouthAngle); ctx.lineTo(0, 0); ctx.fill();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.shadowBlur = 0;
 
     // Ghosts
     ghosts.forEach(ghost => {
+        if (ghost.wait > 0) return;
         ctx.fillStyle = superModeTimer > 0 ? (superModeTimer < 120 && superModeTimer % 20 < 10 ? '#fff' : '#0000ff') : ghost.color;
+        ctx.shadowBlur = 10; ctx.shadowColor = ctx.fillStyle;
         ctx.beginPath(); ctx.arc(ghost.x, ghost.y, 12, Math.PI, 0); ctx.lineTo(ghost.x + 12, ghost.y + 12); ctx.lineTo(ghost.x - 12, ghost.y + 12); ctx.fill();
+        ctx.shadowBlur = 0;
         ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ghost.x - 4, ghost.y - 2, 4, 0, Math.PI*2); ctx.arc(ghost.x + 4, ghost.y - 2, 4, 0, Math.PI*2); ctx.fill();
         ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(ghost.x - 4, ghost.y - 2, 1.5, 0, Math.PI*2); ctx.arc(ghost.x + 4, ghost.y - 2, 1.5, 0, Math.PI*2); ctx.fill();
     });
