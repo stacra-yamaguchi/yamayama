@@ -47,6 +47,61 @@ body {
     align-items: center;
 }
 
+#constellation-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    pointer-events: none;
+    transition: opacity 2s ease-in-out;
+    opacity: 0.6;
+}
+
+/* オリオン座 */
+.constellation-orion {
+    background-image: 
+        radial-gradient(2px 2px at 150px 200px, #fff, transparent),
+        radial-gradient(2px 2px at 210px 200px, #fff, transparent),
+        radial-gradient(2px 2px at 165px 240px, #fff, transparent),
+        radial-gradient(2px 2px at 180px 240px, #fff, transparent),
+        radial-gradient(2px 2px at 195px 240px, #fff, transparent),
+        radial-gradient(2px 2px at 160px 280px, #fff, transparent),
+        radial-gradient(2px 2px at 200px 280px, #fff, transparent);
+}
+
+/* カシオペア座 */
+.constellation-cassiopeia {
+    background-image: 
+        radial-gradient(2px 2px at 100px 100px, #fff, transparent),
+        radial-gradient(2px 2px at 130px 130px, #fff, transparent),
+        radial-gradient(2px 2px at 160px 110px, #fff, transparent),
+        radial-gradient(2px 2px at 190px 140px, #fff, transparent),
+        radial-gradient(2px 2px at 220px 110px, #fff, transparent);
+}
+
+/* 北斗七星 */
+.constellation-ursa {
+    background-image: 
+        radial-gradient(2px 2px at 50px 150px, #fff, transparent),
+        radial-gradient(2px 2px at 80px 160px, #fff, transparent),
+        radial-gradient(2px 2px at 110px 170px, #fff, transparent),
+        radial-gradient(2px 2px at 130px 200px, #fff, transparent),
+        radial-gradient(2px 2px at 170px 210px, #fff, transparent),
+        radial-gradient(2px 2px at 175px 250px, #fff, transparent),
+        radial-gradient(2px 2px at 135px 245px, #fff, transparent);
+}
+
+/* 南十字星 */
+.constellation-crux {
+    background-image: 
+        radial-gradient(3px 3px at 180px 300px, #fff, transparent),
+        radial-gradient(3px 3px at 180px 380px, #fff, transparent),
+        radial-gradient(2px 2px at 140px 340px, #fff, transparent),
+        radial-gradient(2px 2px at 220px 340px, #fff, transparent);
+}
+
 #game-container {
     position: relative;
     width: 360px;
@@ -191,7 +246,9 @@ h1 {
 /* モバイル向け最適化 */
 @media (max-width: 480px) {
     #game-container {
-        height: 100vh;
+        height: 100dvh;
+        height: -webkit-fill-available; /* 秋のSafari対策 */
+        padding-bottom: env(safe-area-inset-bottom);
         border-radius: 0;
         border: none;
     }
