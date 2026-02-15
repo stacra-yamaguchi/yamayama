@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>惑星合体パズル - Planet Merge</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Matter.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+</head>
+
+<body>
+    <div id="game-container">
+        <div id="ui-layer">
+            <div class="info-panel">
+                <div class="score-container">
+                    <span class="label">SCORE</span>
+                    <span id="score">0</span>
+                </div>
+                <div class="best-container">
+                    <span class="label">BEST</span>
+                    <span id="best-score">0</span>
+                </div>
+                <div class="next-container">
+                    <span class="label">NEXT</span>
+                    <div id="next-planet-preview"></div>
+                </div>
+            </div>
+        </div>
+        <div id="game-canvas-container"></div>
+
+        <div id="game-over-screen" class="hidden">
+            <h1>GAME OVER</h1>
+            <p>最終スコア: <span id="final-score">0</span></p>
+            <p>自己ベスト: <span id="final-best">0</span></p>
+            <button id="restart-button">再挑戦</button>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+
+</html>
