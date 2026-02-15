@@ -135,20 +135,22 @@ function resetPositions() {
     if (isMobile) {
         pacman.x = 6.5 * TILE_SIZE; pacman.y = 22.5 * TILE_SIZE;
         const exitY = 8.5 * TILE_SIZE;
+        // status: 'in_house', 'exiting', 'active'
+        // 'target' is used for 'active' and 'exiting' state movement
         ghosts = [
-            { x: 6.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'red', dx: 0, dy: -1, spawnX: 6.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 0, speed: ghostSpeed, status: 'active', exitTarget: {x: 6.5 * TILE_SIZE, y: exitY}, lastPos: {x:0,y:0}, stuckFrames: 0 },
-            { x: 5.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'pink', dx: 0, dy: 0, spawnX: 5.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 60, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 6.5 * TILE_SIZE, y: exitY}, lastPos: {x:0,y:0}, stuckFrames: 0 },
-            { x: 7.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'cyan', dx: 0, dy: 0, spawnX: 7.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 120, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 6.5 * TILE_SIZE, y: exitY}, lastPos: {x:0,y:0}, stuckFrames: 0 },
-            { x: 6.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'orange', dx: 0, dy: 0, spawnX: 6.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 180, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 6.5 * TILE_SIZE, y: exitY}, lastPos: {x:0,y:0}, stuckFrames: 0 }
+            { x: 6.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'red',    spawnX: 6.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 0,   speed: ghostSpeed, status: 'active',   target: {x: 6.5 * TILE_SIZE, y: exitY}, dir: 3 }, // spawn immediately targets exit
+            { x: 5.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'pink',   spawnX: 5.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 60,  speed: ghostSpeed, status: 'in_house', target: null, dir: 1 },
+            { x: 7.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'cyan',   spawnX: 7.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 120, speed: ghostSpeed, status: 'in_house', target: null, dir: 1 },
+            { x: 6.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'orange', spawnX: 6.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 180, speed: ghostSpeed, status: 'in_house', target: null, dir: 1 }
         ];
     } else {
         pacman.x = 13.5 * TILE_SIZE; pacman.y = 10.5 * TILE_SIZE;
         const exitY = 4.5 * TILE_SIZE;
         ghosts = [
-            { x: 13.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'red', dx: 0, dy: -1, spawnX: 13.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 0, speed: ghostSpeed, status: 'active', exitTarget: {x: 13.5 * TILE_SIZE, y: exitY}, lastPos: {x:0,y:0}, stuckFrames: 0 },
-            { x: 12.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'pink', dx: 0, dy: 0, spawnX: 12.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 60, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 13.5 * TILE_SIZE, y: exitY}, lastPos: {x:0,y:0}, stuckFrames: 0 },
-            { x: 14.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'cyan', dx: 0, dy: 0, spawnX: 14.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 120, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 13.5 * TILE_SIZE, y: exitY}, lastPos: {x:0,y:0}, stuckFrames: 0 },
-            { x: 13.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'orange', dx: 0, dy: 0, spawnX: 13.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 180, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 13.5 * TILE_SIZE, y: exitY}, lastPos: {x:0,y:0}, stuckFrames: 0 }
+            { x: 13.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'red',    spawnX: 13.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 0,   speed: ghostSpeed, status: 'active',   target: {x: 13.5 * TILE_SIZE, y: exitY}, dir: 3 },
+            { x: 12.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'pink',   spawnX: 12.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 60,  speed: ghostSpeed, status: 'in_house', target: null, dir: 1 },
+            { x: 14.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'cyan',   spawnX: 14.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 120, speed: ghostSpeed, status: 'in_house', target: null, dir: 1 },
+            { x: 13.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'orange', spawnX: 13.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 180, speed: ghostSpeed, status: 'in_house', target: null, dir: 1 }
         ];
     }
     pacman.direction = 0; pacman.nextDirection = 0;
@@ -159,25 +161,31 @@ function updateLivesUI() {
     livesEl.innerText = "❤️".repeat(lives);
 }
 
-function canMove(x, y, dx, dy, isGhost = false) {
+function canMove(x, y, dx, dy) {
+    // Pacman collision check
     const margin = 2; 
-    const checkPoints = [];
-    const radius = 12;
-    if (dx !== 0) {
-        checkPoints.push({ x: x + dx * (radius), y: y - (radius - margin) });
-        checkPoints.push({ x: x + dx * (radius), y: y + (radius - margin) });
-    } else if (dy !== 0) {
-        checkPoints.push({ x: x - (radius - margin), y: y + dy * (radius) });
-        checkPoints.push({ x: x + (radius - margin), y: y + dy * (radius) });
-    }
-    for (const p of checkPoints) {
-        const c = Math.floor(p.x / TILE_SIZE);
-        const r = Math.floor(p.y / TILE_SIZE);
-        const tile = mapLayout[r] ? mapLayout[r][c] : 1;
-        if (tile === 1) return false;
-        if (!isGhost && (tile === 5 || tile === 4)) return false;
-    }
-    return true;
+    const size = TILE_SIZE;
+    // Check next position corners
+    const nextX = x + dx;
+    const nextY = y + dy;
+    
+    // Convert corners to grid coordinates
+    const left = Math.floor((nextX - 12) / size);
+    const right = Math.floor((nextX + 11) / size); // width-1
+    const top = Math.floor((nextY - 12) / size);
+    const bottom = Math.floor((nextY + 11) / size);
+
+    // Check all touched tiles
+    const tiles = [
+        mapLayout[top]?.[left],
+        mapLayout[top]?.[right],
+        mapLayout[bottom]?.[left],
+        mapLayout[bottom]?.[right]
+    ];
+
+    // If any touched tile is a wall (1) or house (5) or gate (4), block
+    // Pacman cannot enter 4 or 5
+    return !tiles.some(t => t === 1 || t === 4 || t === 5 || t === undefined);
 }
 
 function getDirVec(dir) {
@@ -218,20 +226,17 @@ function update() {
     if (!gameRunning) return;
     if (superModeTimer > 0) superModeTimer--;
 
-    // Particles
+    // Particles & Floating Text Logic
     for(let i=particles.length-1; i>=0; i--) {
-        particles[i].x += particles[i].vx;
-        particles[i].y += particles[i].vy;
-        particles[i].life--;
-        if(particles[i].life <= 0) particles.splice(i, 1);
+        particles[i].x += particles[i].vx; particles[i].y += particles[i].vy;
+        particles[i].life--; if(particles[i].life <= 0) particles.splice(i, 1);
     }
-    // Floating Texts
     for(let i=floatingTexts.length-1; i>=0; i--) {
         floatingTexts[i].y += floatingTexts[i].dy;
-        floatingTexts[i].life--;
-        if(floatingTexts[i].life <= 0) floatingTexts.splice(i, 1);
+        floatingTexts[i].life--; if(floatingTexts[i].life <= 0) floatingTexts.splice(i, 1);
     }
 
+    // Fruit Logic
     if (!fruit.active) {
         if (Math.random() < 0.002) spawnFruit();
     } else {
@@ -244,6 +249,7 @@ function update() {
         }
     }
 
+    // Pacman Movement (Physical Logic)
     const centerX = Math.floor(pacman.x / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
     const centerY = Math.floor(pacman.y / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
 
@@ -252,8 +258,9 @@ function update() {
             pacman.direction = pacman.nextDirection;
         } else {
             const nextVec = getDirVec(pacman.nextDirection);
+            // Snap check for turning
             if (Math.abs(pacman.x - centerX) <= pacman.speed && Math.abs(pacman.y - centerY) <= pacman.speed) {
-                if (canMove(centerX, centerY, nextVec.dx, nextVec.dy)) {
+                if (canMove(centerX, centerY, nextVec.dx * 3, nextVec.dy * 3)) { // Look ahead
                     pacman.x = centerX; pacman.y = centerY;
                     pacman.direction = pacman.nextDirection;
                 }
@@ -262,19 +269,26 @@ function update() {
     }
 
     const vec = getDirVec(pacman.direction);
-    if (canMove(pacman.x, pacman.y, vec.dx, vec.dy)) {
+    if (canMove(pacman.x, pacman.y, vec.dx * pacman.speed, vec.dy * pacman.speed)) {
         pacman.x += vec.dx * pacman.speed; pacman.y += vec.dy * pacman.speed;
+        
+        // Axis locking to center
         if (vec.dx !== 0) {
             if (Math.abs(pacman.y - centerY) < pacman.speed) pacman.y = centerY;
-            else if (pacman.y < centerY) pacman.y += 1; else if (pacman.y > centerY) pacman.y -= 1;
         } else if (vec.dy !== 0) {
             if (Math.abs(pacman.x - centerX) < pacman.speed) pacman.x = centerX;
-            else if (pacman.x < centerX) pacman.x += 1; else if (pacman.x > centerX) pacman.x -= 1;
         }
+        
         pacman.mouthOpen += pacman.mouthSpeed;
         if (pacman.mouthOpen > 0.2 || pacman.mouthOpen < 0) pacman.mouthSpeed *= -1;
-    } else { pacman.x = centerX; pacman.y = centerY; }
+    } else { 
+        // Hit wall, snap to center if close
+        if (Math.hypot(pacman.x - centerX, pacman.y - centerY) < pacman.speed*2) {
+             pacman.x = centerX; pacman.y = centerY; 
+        }
+    }
 
+    // Pellet Collision
     const gridX = Math.floor(pacman.x / TILE_SIZE);
     const gridY = Math.floor(pacman.y / TILE_SIZE);
     if (mapLayout[gridY] && mapLayout[gridY][gridX] === 2) {
@@ -286,122 +300,111 @@ function update() {
     scoreEl.innerText = score;
     if(pelletsRemaining <= 0) gameWin();
 
+    // Ghosts Movement (Target Tile Logic)
     ghosts.forEach(ghost => {
-        if (ghost.wait > 0) { ghost.wait--; return; }
-        
-        // --- Status Logic ---
         if (ghost.status === 'in_house') {
-            ghost.status = 'exiting';
-            ghost.stuckFrames = 0;
-            ghost.lastPos = {x: ghost.x, y: ghost.y};
-        }
-        
-        if (ghost.status === 'exiting') {
-            const tx = ghost.exitTarget.x;
-            const ty = ghost.exitTarget.y;
-            const dx = tx - ghost.x;
-            const dy = ty - ghost.y;
-            const dist = Math.hypot(dx, dy);
-            const speed = ghost.speed;
-            
-            if (dist < speed) {
-                ghost.x = tx; ghost.y = ty;
-                ghost.dx = (Math.random() < 0.5 ? 1 : -1); ghost.dy = 0;
-                ghost.status = 'active';
-                ghost.stuckFrames = 0;
-            } else {
-                const angle = Math.atan2(dy, dx);
-                ghost.x += Math.cos(angle) * speed;
-                ghost.y += Math.sin(angle) * speed;
-                if (Math.abs(dx) > Math.abs(dy)) { ghost.dx = Math.sign(dx); ghost.dy = 0; }
-                else { ghost.dx = 0; ghost.dy = Math.sign(dy); }
+            if (ghost.wait > 0) ghost.wait--;
+            else {
+                ghost.status = 'exiting';
+                // Set initial target to exit position
+                const exitY = (COLS === 14) ? 8.5 * TILE_SIZE : 4.5 * TILE_SIZE;
+                const exitX = (COLS === 14) ? 6.5 * TILE_SIZE : 13.5 * TILE_SIZE;
+                ghost.target = {x: exitX, y: exitY};
             }
             return;
         }
-        
-        // --- Active Logic ---
-        const movedDist = Math.hypot(ghost.x - ghost.lastPos.x, ghost.y - ghost.lastPos.y);
-        if (movedDist < 0.2) ghost.stuckFrames++; else ghost.stuckFrames = 0;
-        ghost.lastPos = {x: ghost.x, y: ghost.y};
 
-        if (ghost.stuckFrames > 180) {
-             ghost.status = 'exiting'; 
-             ghost.x = ghost.spawnX; 
-             ghost.y = ghost.spawnY;
-             ghost.stuckFrames = 0;
-             return;
-        }
+        // Move towards target
+        if (ghost.target) {
+            const dx = ghost.target.x - ghost.x;
+            const dy = ghost.target.y - ghost.y;
+            const dist = Math.hypot(dx, dy);
 
-        const gCenterX = Math.floor(ghost.x / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
-        const gCenterY = Math.floor(ghost.y / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
-        const currentGridX = Math.floor(gCenterX / TILE_SIZE);
-        const currentGridY = Math.floor(gCenterY / TILE_SIZE);
-
-        if (Math.abs(ghost.x - gCenterX) <= ghost.speed && Math.abs(ghost.y - gCenterY) <= ghost.speed) {
-            ghost.x = gCenterX; 
-            ghost.y = gCenterY;
-            
-            const dirs = [{dx:1, dy:0}, {dx:-1, dy:0}, {dx:0, dy:1}, {dx:0, dy:-1}];
-            // FIX: Check neighbor tile directly
-            const validDirs = dirs.filter(d => {
-                if (d.dx === -ghost.dx && d.dy === -ghost.dy) return false;
-                const nx = currentGridX + d.dx;
-                const ny = currentGridY + d.dy;
-                // Boundary check
-                if(nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) return false;
-                const tile = mapLayout[ny][nx];
-                // Allow movement if not a wall (1)
-                // Ghosts can enter 5 (House) and 4 (Gate) usually? 
-                // Let's block 5 to prevent re-entering house randomly
-                return tile !== 1 && tile !== 5; 
-            });
-            
-            if (validDirs.length > 0) {
-                const rand = validDirs[Math.floor(Math.random() * validDirs.length)];
-                ghost.dx = rand.dx; ghost.dy = rand.dy; 
-            } else {
-                // Dead end
-                const reverseDir = {dx: -ghost.dx, dy: -ghost.dy};
-                const nx = currentGridX + reverseDir.dx;
-                const ny = currentGridY + reverseDir.dy;
-                // Check if reverse is basically valid (not wall)
-                if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS && mapLayout[ny][nx] !== 1) {
-                    ghost.dx = reverseDir.dx; ghost.dy = reverseDir.dy;
-                } else {
-                    // Force ANY valid dir
-                    const anyDirs = dirs.filter(d => {
-                        const nx = currentGridX + d.dx;
-                        const ny = currentGridY + d.dy;
-                        if(nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) return false;
-                        return mapLayout[ny][nx] !== 1;
-                    });
-                    if (anyDirs.length > 0) {
-                        ghost.dx = anyDirs[0].dx; ghost.dy = anyDirs[0].dy;
-                    } else {
-                        // Truly stuck, reverse anyway
-                        ghost.dx *= -1; ghost.dy *= -1;
-                    }
+            if (dist <= ghost.speed) {
+                // Reached target! Snap and decide next
+                ghost.x = ghost.target.x;
+                ghost.y = ghost.target.y;
+                
+                // If were exiting, now we are active
+                if (ghost.status === 'exiting') {
+                    ghost.status = 'active';
                 }
+
+                // Decide next target
+                const gx = Math.floor(ghost.x / TILE_SIZE);
+                const gy = Math.floor(ghost.y / TILE_SIZE);
+                
+                const possibleDirs = [];
+                // Check all 4 triggers
+                const checks = [
+                    { dir: 0, dx: 1, dy: 0 },
+                    { dir: 1, dx: 0, dy: 1 },
+                    { dir: 2, dx: -1, dy: 0 },
+                    { dir: 3, dx: 0, dy: -1 }
+                ];
+
+                checks.forEach(c => {
+                    // Don't reverse immediately unless forced
+                    if (Math.abs(c.dir - ghost.dir) === 2 && checks.length > 1) return; // Wait, we verify valid paths first
+
+                    const nx = gx + c.dx;
+                    const ny = gy + c.dy;
+                    
+                    if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
+                        const tile = mapLayout[ny][nx];
+                        if (tile !== 1) { // Not a wall
+                            // If house tile (5), only allow if fleeing or dead end? 
+                            // Standard pacman ghosts can't re-enter house.
+                            if (tile !== 5 && tile !== 4) {
+                                possibleDirs.push(c);
+                            }
+                        }
+                    }
+                });
+
+                // Filter out reverse if possible
+                let validMoves = possibleDirs.filter(d => Math.abs(d.dir - ghost.dir) !== 2);
+                if (validMoves.length === 0) validMoves = possibleDirs; // Forced reverse (dead end)
+
+                if (validMoves.length > 0) {
+                    // Pick random for now (basic AI)
+                    const choice = validMoves[Math.floor(Math.random() * validMoves.length)];
+                    ghost.dir = choice.dir;
+                    ghost.target = {
+                        x: (gx + choice.dx) * TILE_SIZE + TILE_SIZE/2,
+                        y: (gy + choice.dy) * TILE_SIZE + TILE_SIZE/2
+                    };
+                    ghost.dx = choice.dx; // Visuals
+                    ghost.dy = choice.dy; // Visuals
+                } else {
+                    // stuck?
+                    ghost.dir = (ghost.dir + 2) % 4; // reverse
+                }
+
+            } else {
+                // Keep moving
+                const angle = Math.atan2(dy, dx);
+                ghost.x += Math.cos(angle) * ghost.speed;
+                ghost.y += Math.sin(angle) * ghost.speed;
             }
         }
-        
-        if (canMove(ghost.x, ghost.y, ghost.dx, ghost.dy, true)) {
-            ghost.x += ghost.dx * ghost.speed; 
-            ghost.y += ghost.dy * ghost.speed;
-        } else {
-            ghost.x = gCenterX; ghost.y = gCenterY;
-        }
-        
+
+        // Collision with Pacman
         if (Math.hypot(ghost.x - pacman.x, ghost.y - pacman.y) < 22) {
-            if (superModeTimer > 0) {
-                ghost.status = 'in_house';
-                ghost.x = ghost.spawnX; ghost.y = ghost.spawnY; ghost.wait = 120;
-                score += 200; scoreEl.innerText = score;
-                createParticles(pacman.x, pacman.y, ghost.color);
-                createFloatingText(pacman.x, pacman.y, "200");
-            } else { lives--; updateLivesUI(); if (lives <= 0) gameOver(); else resetPositions(); }
+             if (superModeTimer > 0) {
+                 ghost.status = 'in_house';
+                 ghost.x = ghost.spawnX; ghost.y = ghost.spawnY; ghost.wait = 120;
+                 ghost.target = null;
+                 score += 200; scoreEl.innerText = score;
+                 createParticles(pacman.x, pacman.y, ghost.color);
+                 createFloatingText(pacman.x, pacman.y, "200");
+             } else { 
+                 lives--; updateLivesUI(); 
+                 if (lives <= 0) gameOver(); else resetPositions(); 
+             }
         }
     });
+
     draw();
     animationId = requestAnimationFrame(update);
 }
@@ -461,6 +464,7 @@ function draw() {
         ctx.fillText(t.text, t.x, t.y);
     });
 
+    // Pacman
     ctx.fillStyle = superModeTimer > 0 ? (superModeTimer % 20 < 10 ? '#fff' : '#ffff00') : '#ffff00';
     ctx.beginPath();
     const mouthAngle = pacman.mouthOpen * Math.PI;
@@ -469,6 +473,7 @@ function draw() {
     ctx.arc(0, 0, pacman.radius, mouthAngle, 2 * Math.PI - mouthAngle); ctx.lineTo(0, 0); ctx.fill();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
 
+    // Ghosts
     ghosts.forEach(ghost => {
         if (ghost.wait > 0 && ghost.status === 'in_house') return;
         ctx.fillStyle = superModeTimer > 0 ? (superModeTimer < 120 && superModeTimer % 20 < 10 ? '#fff' : '#0000ff') : ghost.color;
