@@ -411,11 +411,37 @@ class Boss {
 
 function spawnEnemy() {
     if (bossMode || frames % 60 !== 0) return;
-    const size = Math.random() * 20 + 40;
+    
+    const types = [
+        { type: 'SCOUT', weight: 40, hp: 1, speed: 5, size: 40, color: '#0ff' },
+        { type: 'SNIPER', weight: 20, hp: 2, speed: 2, size: 45, color: '#f0f' },
+        { type: 'CHARGER', weight: 15, hp: 3, speed: 8, size: 35, color: '#f50' },
+        { type: 'SPREAD', weight: 15, hp: 4, speed: 3, size: 55, color: '#5f0' },
+        { type: 'TANK', weight: 10, hp: 8, speed: 1.5, size: 70, color: '#ff0' }
+    ];
+
+    // Simple weighted random selection
+    let totalWeight = types.reduce((sum, t) => sum + t.weight, 0);
+    let rand = Math.random() * totalWeight;
+    let selected = types[0];
+    for (const t of types) {
+        if (rand < t.weight) { selected = t; break; }
+        rand -= t.weight;
+    }
+
+    const eType = selected;
     enemies.push({
-        x: Math.random() * (canvas.width - size) + size/2, y: -size, size: size,
-        speed: Math.random() * 3 + 2, behavior: ['zigzag', 'straight', 'stopAndGo'][Math.floor(Math.random()*3)],
-        phase: Math.random() * 10, wait: 0, color: `hsl(${Math.random()*360}, 70%, 50%)`, hp: 1 + currentLevelIdx
+        type: eType.type,
+        x: Math.random() * (canvas.width - eType.size) + eType.size/2,
+        y: -eType.size,
+        size: eType.size,
+        speed: eType.speed + (loopCount - 1) * 0.5,
+        color: eType.color,
+        hp: (eType.hp + currentLevelIdx) + (loopCount - 1) * 5,
+        phase: Math.random() * Math.PI * 2,
+        wait: 0,
+        lastShot: 0,
+        targetX: Math.random() * canvas.width // For some behaviors
     });
 }
 
@@ -547,14 +573,63 @@ function update() {
 
     spawnEnemy();
     enemies.forEach((e, i) => {
-        if (e.behavior === 'zigzag') e.x += Math.sin(frames*0.1+e.phase)* (3 + loopCount * 0.5);
-        e.y += e.speed;
-        // Bullet frequency scaling
-        const interval = Math.max(30, 100 - currentLevelIdx * 5 - (loopCount - 1) * 10);
-        if (frames % interval === 0 && Math.random() < (0.2 + loopCount * 0.05)) {
-            enemyBullets.push({ x: e.x, y: e.y, vx: 0, vy: e.speed + 2 + loopCount, size: 20 });
+        // Movement Logic
+        switch(e.type) {
+            case 'SCOUT':
+                e.x += Math.sin(frames * 0.1 + e.phase) * (4 + loopCount);
+                e.y += e.speed;
+                break;
+            case 'SNIPER':
+                if (e.y < canvas.height * 0.25) e.y += e.speed;
+                else {
+                    // Slight drift
+                    e.x += Math.cos(frames * 0.05 + e.phase) * 2;
+                }
+                break;
+            case 'CHARGER':
+                const angleToPlayer = Math.atan2(player.y - e.y, player.x - e.x);
+                e.x += Math.cos(angleToPlayer) * e.speed;
+                e.y += Math.sin(angleToPlayer) * e.speed;
+                break;
+            case 'SPREAD':
+                e.y += e.speed;
+                break;
+            case 'TANK':
+                e.y += e.speed * 0.5;
+                break;
+            default:
+                e.y += e.speed;
         }
+
+        // Shooting Logic
+        const interval = Math.max(30, 120 - currentLevelIdx * 5 - (loopCount - 1) * 10);
+        if (frames % interval === 0) {
+            const angle = Math.atan2(player.y - e.y, player.x - e.x);
+            switch(e.type) {
+                case 'SCOUT':
+                    enemyBullets.push({ x: e.x, y: e.y, vx: Math.cos(angle) * 6, vy: Math.sin(angle) * 6, size: 15 });
+                    break;
+                case 'SNIPER':
+                    enemyBullets.push({ x: e.x, y: e.y, vx: Math.cos(angle) * 12, vy: Math.sin(angle) * 12, size: 10 });
+                    break;
+                case 'SPREAD':
+                    for(let a = -0.4; a <= 0.4; a += 0.4) {
+                        enemyBullets.push({ x: e.x, y: e.y, vx: Math.cos(angle + a) * 5, vy: Math.sin(angle + a) * 5, size: 20 });
+                    }
+                    break;
+                case 'TANK':
+                    for(let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+                        enemyBullets.push({ x: e.x, y: e.y, vx: Math.cos(a) * 4, vy: Math.sin(a) * 4, size: 25 });
+                    }
+                    break;
+                case 'CHARGER':
+                    // Chargers don't shoot
+                    break;
+            }
+        }
+
         if (Math.hypot(e.x - player.x, e.y - player.y) < e.size/2 + player.width/3) handleHit();
+        
         bullets.forEach((b, bi) => {
             if (Math.hypot(b.x - e.x, b.y - e.y) < e.size/2) {
                 e.hp -= b.power || 1;
@@ -568,7 +643,7 @@ function update() {
                 }
             }
         });
-        if (e.y > canvas.height + 50) enemies.splice(i, 1);
+        if (e.y > canvas.height + 100 || e.y < -200 || e.x < -100 || e.x > canvas.width + 100) enemies.splice(i, 1);
     });
     particles.forEach((p, i) => { p.alpha <= 0 ? particles.splice(i, 1) : p.update(); });
 }
@@ -654,7 +729,7 @@ function draw() {
 
     enemies.forEach(e => {
         if (images.enemy.p) {
-            ctx.save(); ctx.shadowBlur = 10; ctx.shadowColor = '#f00';
+            ctx.save(); ctx.shadowBlur = 15; ctx.shadowColor = e.color || '#f00';
             ctx.drawImage(images.enemy.p, e.x - e.size/2, e.y - e.size/2, e.size, e.size);
             ctx.restore();
         }
