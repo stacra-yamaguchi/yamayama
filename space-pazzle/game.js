@@ -100,7 +100,7 @@ function init() {
         });
 
         // デッドライン（ガイドライン）の描画
-        const deadlineY = 100;
+        const deadlineY = 70;
         context.save();
         context.setLineDash([5, 5]);
         context.beginPath();
@@ -249,7 +249,7 @@ function spawnPlanet() {
     
     const planetData = PLANETS[nextPlanetIdx];
     const x = canvasWidth / 2;
-    const y = 80;
+    const y = 50;
 
     currentPlanet = Bodies.circle(x, y, planetData.radius, {
         isStatic: true,
@@ -279,7 +279,7 @@ function movePlanet(e) {
     // 画面端の制限（マージンを持たせる）
     x = Math.max(radius + 5, Math.min(canvasWidth - radius - 5, x));
     
-    Body.setPosition(currentPlanet, { x: x, y: 80 });
+    Body.setPosition(currentPlanet, { x: x, y: 50 });
 }
 
 function handleRelease() {
@@ -345,7 +345,7 @@ function checkGameOver() {
     if (isGameOver) return;
     
     const bodies = Composite.allBodies(engine.world);
-    const deadlineY = 100; // ガイドラインと一致させる
+    const deadlineY = 70; // ガイドラインと一致させる
     const currentTime = Date.now();
 
     for (let body of bodies) {
