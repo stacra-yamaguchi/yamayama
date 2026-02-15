@@ -76,7 +76,7 @@ const pacman = {
     radius: 13,
     direction: 0,
     nextDirection: 0,
-    speed: 3, // Changed to integer for precision
+    speed: 3,
     mouthOpen: 0,
     mouthSpeed: 0.2
 };
@@ -130,7 +130,7 @@ function initGame() {
 
 function resetPositions() {
     const isMobile = COLS === 14;
-    const ghostSpeed = 2; // Changed to integer for precision
+    const ghostSpeed = 2; 
     
     if (isMobile) {
         pacman.x = 6.5 * TILE_SIZE; pacman.y = 22.5 * TILE_SIZE;
@@ -160,7 +160,6 @@ function updateLivesUI() {
 }
 
 function canMove(x, y, dx, dy, isGhost = false) {
-    // Reduced margin to prevent false positives/negatives with walls
     const margin = 2; 
     const checkPoints = [];
     const radius = 12;
@@ -306,7 +305,6 @@ function update() {
             const speed = ghost.speed;
             
             if (dist < speed) {
-                // SNAP to exact target
                 ghost.x = tx; ghost.y = ty;
                 ghost.dx = (Math.random() < 0.5 ? 1 : -1); ghost.dy = 0;
                 ghost.status = 'active';
@@ -336,33 +334,51 @@ function update() {
 
         const gCenterX = Math.floor(ghost.x / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
         const gCenterY = Math.floor(ghost.y / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
-        
-        // --- CRITICAL SNAP LOGIC ---
-        // If getting close to the center of a tile, force snap to center axis to prevent drift
+        const currentGridX = Math.floor(gCenterX / TILE_SIZE);
+        const currentGridY = Math.floor(gCenterY / TILE_SIZE);
+
         if (Math.abs(ghost.x - gCenterX) <= ghost.speed && Math.abs(ghost.y - gCenterY) <= ghost.speed) {
             ghost.x = gCenterX; 
             ghost.y = gCenterY;
             
-            // Re-evaluate direction at intersection
             const dirs = [{dx:1, dy:0}, {dx:-1, dy:0}, {dx:0, dy:1}, {dx:0, dy:-1}];
+            // FIX: Check neighbor tile directly
             const validDirs = dirs.filter(d => {
                 if (d.dx === -ghost.dx && d.dy === -ghost.dy) return false;
-                return canMove(gCenterX, gCenterY, d.dx, d.dy, true);
+                const nx = currentGridX + d.dx;
+                const ny = currentGridY + d.dy;
+                // Boundary check
+                if(nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) return false;
+                const tile = mapLayout[ny][nx];
+                // Allow movement if not a wall (1)
+                // Ghosts can enter 5 (House) and 4 (Gate) usually? 
+                // Let's block 5 to prevent re-entering house randomly
+                return tile !== 1 && tile !== 5; 
             });
             
             if (validDirs.length > 0) {
                 const rand = validDirs[Math.floor(Math.random() * validDirs.length)];
                 ghost.dx = rand.dx; ghost.dy = rand.dy; 
             } else {
-                // Dead end logic
+                // Dead end
                 const reverseDir = {dx: -ghost.dx, dy: -ghost.dy};
-                if (canMove(gCenterX, gCenterY, reverseDir.dx, reverseDir.dy, true)) {
+                const nx = currentGridX + reverseDir.dx;
+                const ny = currentGridY + reverseDir.dy;
+                // Check if reverse is basically valid (not wall)
+                if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS && mapLayout[ny][nx] !== 1) {
                     ghost.dx = reverseDir.dx; ghost.dy = reverseDir.dy;
                 } else {
-                    const anyDirs = dirs.filter(d => canMove(gCenterX, gCenterY, d.dx, d.dy, true));
+                    // Force ANY valid dir
+                    const anyDirs = dirs.filter(d => {
+                        const nx = currentGridX + d.dx;
+                        const ny = currentGridY + d.dy;
+                        if(nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) return false;
+                        return mapLayout[ny][nx] !== 1;
+                    });
                     if (anyDirs.length > 0) {
                         ghost.dx = anyDirs[0].dx; ghost.dy = anyDirs[0].dy;
                     } else {
+                        // Truly stuck, reverse anyway
                         ghost.dx *= -1; ghost.dy *= -1;
                     }
                 }
@@ -373,7 +389,6 @@ function update() {
             ghost.x += ghost.dx * ghost.speed; 
             ghost.y += ghost.dy * ghost.speed;
         } else {
-            // If movement blocked (but not at center), force snap to center immediately to unstuck
             ghost.x = gCenterX; ghost.y = gCenterY;
         }
         
