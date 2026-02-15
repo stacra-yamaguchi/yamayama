@@ -29,6 +29,7 @@ let score = 0;
 let bestScore = parseInt(localStorage.getItem('space-pazzle-best-score')) || 0;
 let isGameOver = false;
 let isDropping = false;
+let isDragging = false;
 let planetImage = new Image();
 planetImage.src = TEXTURE_PATH;
 
@@ -137,11 +138,24 @@ function init() {
     // ハイスコアの表示
     document.getElementById('best-score').innerText = bestScore;
 
-    container.addEventListener('mousedown', handleInteraction);
+    container.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        movePlanet(e);
+    });
     container.addEventListener('touchstart', (e) => {
         e.preventDefault();
-        handleInteraction(e);
+        isDragging = true;
+        const touch = e.touches[0];
+        movePlanet({ clientX: touch.clientX, target: container });
     });
+
+    window.addEventListener('mouseup', handleRelease);
+    window.addEventListener('touchend', (e) => {
+        if (isDragging) {
+            handleRelease();
+        }
+    });
+
     container.addEventListener('mousemove', movePlanet);
     container.addEventListener('touchmove', (e) => {
         e.preventDefault();
@@ -220,7 +234,7 @@ function spawnPlanet() {
 }
 
 function movePlanet(e) {
-    if (!currentPlanet || isDropping || isGameOver) return;
+    if (!currentPlanet || isDropping || isGameOver || !isDragging) return;
     
     const container = document.getElementById('game-canvas-container');
     const rect = container.getBoundingClientRect();
@@ -232,9 +246,10 @@ function movePlanet(e) {
     Body.setPosition(currentPlanet, { x: x, y: 80 });
 }
 
-function handleInteraction(e) {
-    if (!currentPlanet || isDropping || isGameOver) return;
+function handleRelease() {
+    if (!currentPlanet || isDropping || isGameOver || !isDragging) return;
     
+    isDragging = false;
     Body.setStatic(currentPlanet, false);
     isDropping = true;
     
