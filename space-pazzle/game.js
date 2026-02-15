@@ -31,6 +31,7 @@ let isGameOver = false;
 let isDropping = false;
 let isDragging = false;
 let planetImage = new Image();
+let effects = []; // エフェクト管理用
 planetImage.src = TEXTURE_PATH;
 
 // 初期化
@@ -116,6 +117,38 @@ function init() {
         context.textAlign = 'right';
         context.fillText('DEADLINE', canvasWidth - 10, deadlineY - 8);
         context.restore();
+
+        // エフェクト（テキスト・パーティクル）の描画と更新
+        const currentTime = Date.now();
+        effects = effects.filter(eff => {
+            const elapsed = currentTime - eff.startTime;
+            const progress = elapsed / eff.duration;
+            if (progress >= 1) return false;
+
+            context.save();
+            const opacity = 1 - progress;
+            
+            if (eff.type === 'text') {
+                // テキストエフェクト（上昇しながらフェードアウト）
+                context.globalAlpha = opacity;
+                context.fillStyle = '#fff';
+                context.font = 'bold 20px Outfit, sans-serif';
+                context.textAlign = 'center';
+                context.shadowBlur = 10;
+                context.shadowColor = eff.color || '#00f2ff';
+                context.fillText(eff.text, eff.x, eff.y - (progress * 50));
+            } else if (eff.type === 'particle') {
+                // パーティクルエフェクト
+                context.globalAlpha = opacity;
+                context.fillStyle = eff.color || '#fff';
+                const size = eff.size * (1 - progress);
+                context.beginPath();
+                context.arc(eff.x + eff.vx * elapsed * 0.1, eff.y + eff.vy * elapsed * 0.1, size, 0, Math.PI * 2);
+                context.fill();
+            }
+            context.restore();
+            return true;
+        });
     };
 
     const wallOptions = { 
@@ -294,6 +327,9 @@ function handleCollision(event) {
                 score += nextPlanetData.score;
                 document.getElementById('score').innerText = score;
 
+                // 合成エフェクトの生成
+                createMergeEffect(newX, newY, nextPlanetData.name);
+
                 // ハイスコアの更新
                 if (score > bestScore) {
                     bestScore = score;
@@ -347,6 +383,7 @@ function endGame() {
 function restartGame() {
     score = 0;
     isGameOver = false;
+    effects = []; // エフェクトをクリア
     document.getElementById('score').innerText = '0';
     document.getElementById('game-over-screen').classList.add('hidden');
     
@@ -363,6 +400,39 @@ function restartGame() {
 
     Runner.run(runner, engine);
     spawnPlanet();
+}
+
+function createMergeEffect(x, y, planetName) {
+    const color = '#00f2ff';
+    const startTime = Date.now();
+    
+    // 名称テキストエフェクト
+    effects.push({
+        type: 'text',
+        x: x,
+        y: y,
+        text: planetName,
+        color: color,
+        duration: 1500,
+        startTime: startTime
+    });
+    
+    // パーティクルエフェクト
+    for (let i = 0; i < 12; i++) {
+        const angle = (Math.PI * 2 / 12) * i;
+        const speed = 2 + Math.random() * 3;
+        effects.push({
+            type: 'particle',
+            x: x,
+            y: y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            size: 3 + Math.random() * 4,
+            color: color,
+            duration: 800 + Math.random() * 400,
+            startTime: startTime
+        });
+    }
 }
 
 document.getElementById('restart-button').addEventListener('click', restartGame);
