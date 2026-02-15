@@ -67,6 +67,8 @@ let animationId;
 let gameRunning = false;
 let pelletsRemaining = 0;
 let fruit = { x: -1, y: -1, active: false, timer: 0 };
+let particles = [];
+let floatingTexts = [];
 
 const pacman = {
     x: 0,
@@ -74,7 +76,7 @@ const pacman = {
     radius: 13,
     direction: 0,
     nextDirection: 0,
-    speed: 3, // 速度調整 4 -> 3
+    speed: 2.5, // 速度抑制
     mouthOpen: 0,
     mouthSpeed: 0.2
 };
@@ -98,46 +100,54 @@ function initGame() {
         COLS = 28; ROWS = 14;
         mapLayout = HORIZONTAL_MAP.map(row => [...row]);
     }
+    
     canvas.width = COLS * TILE_SIZE;
     canvas.height = ROWS * TILE_SIZE;
+    
     score = 0;
     lives = 3;
     scoreEl.innerText = score;
     updateLivesUI();
     resetPositions();
+    
     pelletsRemaining = 0;
     for(let r=0; r<ROWS; r++) {
         for(let c=0; c<COLS; c++) {
             if(mapLayout[r][c] === 2 || mapLayout[r][c] === 3) pelletsRemaining++;
         }
     }
+
     gameOverEl.style.display = 'none';
     gameWinEl.style.display = 'none';
     gameRunning = true;
     fruit.active = false;
     fruit.timer = 0;
+    particles = [];
+    floatingTexts = [];
     if (animationId) cancelAnimationFrame(animationId);
     update();
 }
 
 function resetPositions() {
     const isMobile = COLS === 14;
-    // ghost.speed を 3 -> 2 に調整
+    const ghostSpeed = 1.6; // 速度抑制
+    
     if (isMobile) {
         pacman.x = 6.5 * TILE_SIZE; pacman.y = 22.5 * TILE_SIZE;
+        // status: 'in_house', 'exiting', 'active'
         ghosts = [
-            { x: 6 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'red', dx: 1, dy: 0, spawnX: 6 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 0, speed: 2 },
-            { x: 7 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'pink', dx: -1, dy: 0, spawnX: 7 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 60, speed: 2 },
-            { x: 6 * TILE_SIZE, y: 10 * TILE_SIZE, color: 'cyan', dx: 0, dy: -1, spawnX: 6 * TILE_SIZE, spawnY: 10 * TILE_SIZE, wait: 120, speed: 2 },
-            { x: 7 * TILE_SIZE, y: 10 * TILE_SIZE, color: 'orange', dx: 0, dy: 1, spawnX: 7 * TILE_SIZE, spawnY: 10 * TILE_SIZE, wait: 180, speed: 2 }
+            { x: 6.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'red', dx: 0, dy: -1, spawnX: 6.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 0, speed: ghostSpeed, status: 'active', exitTarget: {x: 6.5 * TILE_SIZE, y: 8 * TILE_SIZE} },
+            { x: 5.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'pink', dx: 0, dy: 0, spawnX: 5.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 60, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 6.5 * TILE_SIZE, y: 8 * TILE_SIZE} },
+            { x: 7.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'cyan', dx: 0, dy: 0, spawnX: 7.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 120, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 6.5 * TILE_SIZE, y: 8 * TILE_SIZE} },
+            { x: 6.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'orange', dx: 0, dy: 0, spawnX: 6.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 180, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 6.5 * TILE_SIZE, y: 8 * TILE_SIZE} }
         ];
     } else {
         pacman.x = 13.5 * TILE_SIZE; pacman.y = 10.5 * TILE_SIZE;
         ghosts = [
-            { x: 13 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'red', dx: 1, dy: 0, spawnX: 13 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 0, speed: 2 },
-            { x: 14 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'pink', dx: -1, dy: 0, spawnX: 14 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 60, speed: 2 },
-            { x: 13 * TILE_SIZE, y: 6 * TILE_SIZE, color: 'cyan', dx: 0, dy: -1, spawnX: 13 * TILE_SIZE, spawnY: 6 * TILE_SIZE, wait: 120, speed: 2 },
-            { x: 14 * TILE_SIZE, y: 6 * TILE_SIZE, color: 'orange', dx: 0, dy: 1, spawnX: 14 * TILE_SIZE, spawnY: 6 * TILE_SIZE, wait: 180, speed: 2 }
+            { x: 13.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'red', dx: 0, dy: -1, spawnX: 13.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 0, speed: ghostSpeed, status: 'active', exitTarget: {x: 13.5 * TILE_SIZE, y: 4 * TILE_SIZE} },
+            { x: 12.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'pink', dx: 0, dy: 0, spawnX: 12.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 60, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 13.5 * TILE_SIZE, y: 4 * TILE_SIZE} },
+            { x: 14.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'cyan', dx: 0, dy: 0, spawnX: 14.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 120, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 13.5 * TILE_SIZE, y: 4 * TILE_SIZE} },
+            { x: 13.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'orange', dx: 0, dy: 0, spawnX: 13.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 180, speed: ghostSpeed, status: 'in_house', exitTarget: {x: 13.5 * TILE_SIZE, y: 4 * TILE_SIZE} }
         ];
     }
     pacman.direction = 0; pacman.nextDirection = 0;
@@ -164,7 +174,6 @@ function canMove(x, y, dx, dy, isGhost = false) {
         const r = Math.floor(p.y / TILE_SIZE);
         const tile = mapLayout[r] ? mapLayout[r][c] : 1;
         if (tile === 1) return false;
-        // ゴーストはタイル 5 (House) と 4 (Gate) を通行可能にする
         if (!isGhost && (tile === 5 || tile === 4)) return false;
     }
     return true;
@@ -188,9 +197,40 @@ function spawnFruit() {
     fruit.active = true; fruit.timer = 600;
 }
 
+function createParticles(x, y, color) {
+    for(let i=0; i<8; i++) {
+        particles.push({
+            x: x, y: y,
+            vx: (Math.random() - 0.5) * 4,
+            vy: (Math.random() - 0.5) * 4,
+            life: 30,
+            color: color
+        });
+    }
+}
+
+function createFloatingText(x, y, text) {
+    floatingTexts.push({ x: x, y: y, text: text, life: 60, dy: -1 });
+}
+
 function update() {
     if (!gameRunning) return;
     if (superModeTimer > 0) superModeTimer--;
+
+    // Particles
+    for(let i=particles.length-1; i>=0; i--) {
+        particles[i].x += particles[i].vx;
+        particles[i].y += particles[i].vy;
+        particles[i].life--;
+        if(particles[i].life <= 0) particles.splice(i, 1);
+    }
+    // Floating Texts
+    for(let i=floatingTexts.length-1; i>=0; i--) {
+        floatingTexts[i].y += floatingTexts[i].dy;
+        floatingTexts[i].life--;
+        if(floatingTexts[i].life <= 0) floatingTexts.splice(i, 1);
+    }
+
     if (!fruit.active) {
         if (Math.random() < 0.002) spawnFruit();
     } else {
@@ -198,10 +238,14 @@ function update() {
         if (fruit.timer <= 0) fruit.active = false;
         if (Math.hypot(pacman.x - fruit.x, pacman.y - fruit.y) < 20) {
             fruit.active = false; score += 500; scoreEl.innerText = score;
+            createParticles(fruit.x, fruit.y, '#ff0000');
+            createFloatingText(fruit.x, fruit.y, "500");
         }
     }
+
     const centerX = Math.floor(pacman.x / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
     const centerY = Math.floor(pacman.y / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
+
     if (pacman.nextDirection !== pacman.direction) {
         if (isOpposite(pacman.nextDirection, pacman.direction)) {
             pacman.direction = pacman.nextDirection;
@@ -215,6 +259,7 @@ function update() {
             }
         }
     }
+
     const vec = getDirVec(pacman.direction);
     if (canMove(pacman.x, pacman.y, vec.dx, vec.dy)) {
         pacman.x += vec.dx * pacman.speed; pacman.y += vec.dy * pacman.speed;
@@ -228,6 +273,7 @@ function update() {
         pacman.mouthOpen += pacman.mouthSpeed;
         if (pacman.mouthOpen > 0.2 || pacman.mouthOpen < 0) pacman.mouthSpeed *= -1;
     } else { pacman.x = centerX; pacman.y = centerY; }
+
     const gridX = Math.floor(pacman.x / TILE_SIZE);
     const gridY = Math.floor(pacman.y / TILE_SIZE);
     if (mapLayout[gridY] && mapLayout[gridY][gridX] === 2) {
@@ -238,8 +284,44 @@ function update() {
     }
     scoreEl.innerText = score;
     if(pelletsRemaining <= 0) gameWin();
+
     ghosts.forEach(ghost => {
         if (ghost.wait > 0) { ghost.wait--; return; }
+        
+        // --- Status Logic ---
+        if (ghost.status === 'in_house') {
+            ghost.status = 'exiting';
+        }
+        
+        if (ghost.status === 'exiting') {
+            // Move towards exitTarget ignoring walls partially
+            const tx = ghost.exitTarget.x;
+            const ty = ghost.exitTarget.y;
+            const dx = tx - ghost.x;
+            const dy = ty - ghost.y;
+            const dist = Math.hypot(dx, dy);
+            
+            if (dist < 2) {
+                ghost.x = tx; ghost.y = ty;
+                ghost.dx = (Math.random() < 0.5 ? 1 : -1); ghost.dy = 0;
+                ghost.status = 'active';
+            } else {
+                // Determine movement to target
+                const speed = ghost.speed;
+                // Simple normalize
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    ghost.x += Math.sign(dx) * speed;
+                } else {
+                    ghost.y += Math.sign(dy) * speed;
+                }
+                // Determine direction for drawing eyes
+                if (Math.abs(dx) > Math.abs(dy)) { ghost.dx = Math.sign(dx); ghost.dy = 0; }
+                else { ghost.dx = 0; ghost.dy = Math.sign(dy); }
+            }
+            return; // Skip normal movement
+        }
+        
+        // --- Active Logic ---
         const gCenterX = Math.floor(ghost.x / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
         const gCenterY = Math.floor(ghost.y / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
         if (Math.abs(ghost.x - gCenterX) <= ghost.speed && Math.abs(ghost.y - gCenterY) <= ghost.speed) {
@@ -256,10 +338,14 @@ function update() {
         if (canMove(ghost.x, ghost.y, ghost.dx, ghost.dy, true)) {
             ghost.x += ghost.dx * ghost.speed; ghost.y += ghost.dy * ghost.speed;
         } else { ghost.x = gCenterX; ghost.y = gCenterY; }
+        
         if (Math.hypot(ghost.x - pacman.x, ghost.y - pacman.y) < 22) {
             if (superModeTimer > 0) {
+                ghost.status = 'in_house'; // Send back to house status
                 ghost.x = ghost.spawnX; ghost.y = ghost.spawnY; ghost.wait = 120;
                 score += 200; scoreEl.innerText = score;
+                createParticles(pacman.x, pacman.y, ghost.color);
+                createFloatingText(pacman.x, pacman.y, "200");
             } else { lives--; updateLivesUI(); if (lives <= 0) gameOver(); else resetPositions(); }
         }
     });
@@ -273,10 +359,8 @@ function drawWall(x, y) {
 }
 
 function drawFruit(x, y) {
-    // チェリーとイチゴを交互に出す (スコアに応じて変えるなど)
     const isCherry = Math.floor(score / 500) % 2 === 0;
     if (isCherry) {
-        // Cherry
         ctx.fillStyle = '#ff0000';
         ctx.beginPath(); ctx.arc(x - 5, y + 5, 6, 0, Math.PI * 2); ctx.fill();
         ctx.beginPath(); ctx.arc(x + 5, y + 5, 6, 0, Math.PI * 2); ctx.fill();
@@ -284,7 +368,6 @@ function drawFruit(x, y) {
         ctx.beginPath(); ctx.moveTo(x - 5, y + 5); ctx.quadraticCurveTo(x, y - 5, x, y - 10); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(x + 5, y + 5); ctx.quadraticCurveTo(x, y - 5, x, y - 10); ctx.stroke();
     } else {
-        // Strawberry
         ctx.fillStyle = '#ff0000';
         ctx.beginPath(); ctx.moveTo(x, y + 10); ctx.lineTo(x - 8, y - 2); ctx.quadraticCurveTo(x, y - 10, x + 8, y - 2); ctx.closePath(); ctx.fill();
         ctx.fillStyle = '#ffffff';
@@ -310,9 +393,23 @@ function draw() {
             }
         }
     }
-    if (fruit.active) {
-        drawFruit(fruit.x, fruit.y);
-    }
+    if (fruit.active) drawFruit(fruit.x, fruit.y);
+    
+    // Particles
+    particles.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life / 30;
+        ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fill();
+        ctx.globalAlpha = 1.0;
+    });
+
+    // Floating Texts
+    ctx.font = '12px "Press Start 2P"';
+    ctx.fillStyle = '#00ffff';
+    floatingTexts.forEach(t => {
+        ctx.fillText(t.text, t.x, t.y);
+    });
+
     // Pacman
     ctx.fillStyle = superModeTimer > 0 ? (superModeTimer % 20 < 10 ? '#fff' : '#ffff00') : '#ffff00';
     ctx.beginPath();
@@ -323,7 +420,7 @@ function draw() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     // Ghosts
     ghosts.forEach(ghost => {
-        if (ghost.wait > 0) return;
+        if (ghost.wait > 0 && ghost.status === 'in_house') return; // Wait only if in house and waiting
         ctx.fillStyle = superModeTimer > 0 ? (superModeTimer < 120 && superModeTimer % 20 < 10 ? '#fff' : '#0000ff') : ghost.color;
         ctx.beginPath(); ctx.arc(ghost.x, ghost.y, 12, Math.PI, 0); ctx.lineTo(ghost.x + 12, ghost.y + 12); ctx.lineTo(ghost.x - 12, ghost.y + 12); ctx.fill();
         ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ghost.x - 4, ghost.y - 2, 4, 0, Math.PI*2); ctx.arc(ghost.x + 4, ghost.y - 2, 4, 0, Math.PI*2); ctx.fill();
