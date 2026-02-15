@@ -10,6 +10,26 @@
     --planet-text: #ffffff;
 }
 
+.back-home-link {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    z-index: 1000;
+    color: rgba(255, 255, 255, 0.4);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 700;
+    transition: color 0.3s, transform 0.2s;
+    backdrop-filter: blur(5px);
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.back-home-link:hover {
+    color: var(--accent-color);
+    transform: translateX(-3px);
+}
+
 #game-container::before {
     content: "";
     position: absolute;
