@@ -151,6 +151,16 @@ function init() {
 
     Events.on(engine, 'collisionStart', handleCollision);
     Events.on(engine, 'afterUpdate', checkGameOver);
+
+    // リサイズ対応
+    window.addEventListener('resize', () => {
+        canvasWidth = container.clientWidth;
+        canvasHeight = container.clientHeight;
+        render.canvas.width = canvasWidth;
+        render.canvas.height = canvasHeight;
+        render.options.width = canvasWidth;
+        render.options.height = canvasHeight;
+    });
 }
 
 function updatePreview() {

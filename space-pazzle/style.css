@@ -149,3 +149,53 @@ h1 {
     transform: scale(1.05);
     box-shadow: 0 0 20px var(--accent-color);
 }
+
+/* モバイル向け最適化 */
+@media (max-width: 480px) {
+    #game-container {
+        height: 100vh;
+        border-radius: 0;
+        border: none;
+    }
+
+    #ui-layer {
+        padding: 10px;
+    }
+
+    .info-panel {
+        padding: 10px 15px;
+        gap: 10px;
+    }
+
+    #score, #best-score {
+        font-size: 1.5rem;
+    }
+
+    .label {
+        font-size: 0.7rem;
+        margin-bottom: 2px;
+    }
+
+    .next-container {
+        width: 70px;
+    }
+
+    #next-planet-preview {
+        min-width: 60px;
+        height: 60px;
+        padding: 2px;
+    }
+
+    .next-planet-name {
+        font-size: 0.6rem;
+    }
+
+    #next-planet-preview canvas {
+        width: 40px;
+        height: 40px;
+    }
+
+    h1 {
+        font-size: 2.5rem;
+    }
+}
