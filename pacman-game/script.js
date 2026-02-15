@@ -44,7 +44,7 @@ const pacman = {
     radius: 13,
     direction: 0,
     nextDirection: 0,
-    speed: 2,
+    speed: 4, // 速度向上
     mouthOpen: 0,
     mouthSpeed: 0.2
 };
@@ -91,10 +91,10 @@ function resetPositions() {
     superModeTimer = 0;
     
     ghosts = [
-        { x: 13 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'red', dx: 1, dy: 0, spawnX: 13 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 0 },
-        { x: 14 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'pink', dx: -1, dy: 0, spawnX: 14 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 60 },
-        { x: 13 * TILE_SIZE, y: 6 * TILE_SIZE, color: 'cyan', dx: 0, dy: -1, spawnX: 13 * TILE_SIZE, spawnY: 6 * TILE_SIZE, wait: 120 },
-        { x: 14 * TILE_SIZE, y: 6 * TILE_SIZE, color: 'orange', dx: 0, dy: 1, spawnX: 14 * TILE_SIZE, spawnY: 6 * TILE_SIZE, wait: 180 }
+        { x: 13 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'red', dx: 1, dy: 0, spawnX: 13 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 0, speed: 3 },
+        { x: 14 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'pink', dx: -1, dy: 0, spawnX: 14 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 60, speed: 3 },
+        { x: 13 * TILE_SIZE, y: 6 * TILE_SIZE, color: 'cyan', dx: 0, dy: -1, spawnX: 13 * TILE_SIZE, spawnY: 6 * TILE_SIZE, wait: 120, speed: 3 },
+        { x: 14 * TILE_SIZE, y: 6 * TILE_SIZE, color: 'orange', dx: 0, dy: 1, spawnX: 14 * TILE_SIZE, spawnY: 6 * TILE_SIZE, wait: 180, speed: 3 }
     ];
 }
 
@@ -103,21 +103,24 @@ function updateLivesUI() {
 }
 
 function canMove(x, y, dx, dy, isGhost = false) {
-    const margin = 6;
+    const margin = 8; // 速度向上にあわせてマージンを調整
     const checkPoints = [];
+    const radius = 12; // ゴーストとパックマン共通の判定サイズ
+    
     if (dx !== 0) {
-        checkPoints.push({ x: x + dx * (pacman.radius - 2), y: y - (pacman.radius - margin) });
-        checkPoints.push({ x: x + dx * (pacman.radius - 2), y: y + (pacman.radius - margin) });
-    } else {
-        checkPoints.push({ x: x - (pacman.radius - margin), y: y + dy * (pacman.radius - 2) });
-        checkPoints.push({ x: x + (pacman.radius - margin), y: y + dy * (pacman.radius - 2) });
+        checkPoints.push({ x: x + dx * (radius), y: y - (radius - margin) });
+        checkPoints.push({ x: x + dx * (radius), y: y + (radius - margin) });
+    } else if (dy !== 0) {
+        checkPoints.push({ x: x - (radius - margin), y: y + dy * (radius) });
+        checkPoints.push({ x: x + (radius - margin), y: y + dy * (radius) });
     }
+    
     for (const p of checkPoints) {
         const c = Math.floor(p.x / TILE_SIZE);
         const r = Math.floor(p.y / TILE_SIZE);
         const tile = mapLayout[r] ? mapLayout[r][c] : 1;
         if (tile === 1 || tile === 5) return false;
-        if (tile === 4 && !isGhost) return false; // Gates only for ghosts
+        if (tile === 4 && !isGhost) return false;
     }
     return true;
 }
@@ -138,7 +141,7 @@ function spawnFruit() {
     fruit.x = 13.5 * TILE_SIZE;
     fruit.y = 10.5 * TILE_SIZE;
     fruit.active = true;
-    fruit.timer = 600; // 10 seconds
+    fruit.timer = 600;
 }
 
 function update() {
@@ -146,9 +149,9 @@ function update() {
 
     if (superModeTimer > 0) superModeTimer--;
 
-    // Fruit logic
+    // Fruit
     if (!fruit.active) {
-        if (Math.random() < 0.002) spawnFruit(); // Approx every 8-10 secs
+        if (Math.random() < 0.002) spawnFruit();
     } else {
         fruit.timer--;
         if (fruit.timer <= 0) fruit.active = false;
@@ -160,14 +163,16 @@ function update() {
     }
 
     // PACMAN TURN
+    const centerX = Math.floor(pacman.x / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
+    const centerY = Math.floor(pacman.y / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
+
     if (pacman.nextDirection !== pacman.direction) {
         if (isOpposite(pacman.nextDirection, pacman.direction)) {
             pacman.direction = pacman.nextDirection;
         } else {
             const nextVec = getDirVec(pacman.nextDirection);
-            const centerX = Math.floor(pacman.x / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
-            const centerY = Math.floor(pacman.y / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
-            if (Math.abs(pacman.x - centerX) < 4 && Math.abs(pacman.y - centerY) < 4) {
+            // 速度向上にあわせて許容誤差を pacman.speed 以上に設定
+            if (Math.abs(pacman.x - centerX) <= pacman.speed && Math.abs(pacman.y - centerY) <= pacman.speed) {
                 if (canMove(centerX, centerY, nextVec.dx, nextVec.dy)) {
                     pacman.x = centerX; pacman.y = centerY;
                     pacman.direction = pacman.nextDirection;
@@ -181,17 +186,23 @@ function update() {
     if (canMove(pacman.x, pacman.y, vec.dx, vec.dy)) {
         pacman.x += vec.dx * pacman.speed;
         pacman.y += vec.dy * pacman.speed;
-        const centerX = Math.floor(pacman.x / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
-        const centerY = Math.floor(pacman.y / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
+        
+        // Corridor alignment
         if (vec.dx !== 0) {
-            if (pacman.y < centerY) pacman.y = Math.min(centerY, pacman.y + 1);
-            else if (pacman.y > centerY) pacman.y = Math.max(centerY, pacman.y - 1);
+            if (Math.abs(pacman.y - centerY) < pacman.speed) pacman.y = centerY;
+            else if (pacman.y < centerY) pacman.y += 1;
+            else if (pacman.y > centerY) pacman.y -= 1;
         } else if (vec.dy !== 0) {
-            if (pacman.x < centerX) pacman.x = Math.min(centerX, pacman.x + 1);
-            else if (pacman.x > centerX) pacman.x = Math.max(centerX, pacman.x - 1);
+            if (Math.abs(pacman.x - centerX) < pacman.speed) pacman.x = centerX;
+            else if (pacman.x < centerX) pacman.x += 1;
+            else if (pacman.x > centerX) pacman.x -= 1;
         }
         pacman.mouthOpen += pacman.mouthSpeed;
         if (pacman.mouthOpen > 0.2 || pacman.mouthOpen < 0) pacman.mouthSpeed *= -1;
+    } else {
+        // Blocked: Snap to center
+        pacman.x = centerX;
+        pacman.y = centerY;
     }
 
     // EAT
@@ -208,15 +219,12 @@ function update() {
 
     // GHOSTS
     ghosts.forEach(ghost => {
-        if (ghost.wait > 0) {
-             ghost.wait--;
-             return;
-        }
+        if (ghost.wait > 0) { ghost.wait--; return; }
         
         const gCenterX = Math.floor(ghost.x / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
         const gCenterY = Math.floor(ghost.y / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
 
-        if (Math.abs(ghost.x - gCenterX) < 2 && Math.abs(ghost.y - gCenterY) < 2) {
+        if (Math.abs(ghost.x - gCenterX) <= ghost.speed && Math.abs(ghost.y - gCenterY) <= ghost.speed) {
             const dirs = [{dx:1, dy:0}, {dx:-1, dy:0}, {dx:0, dy:1}, {dx:0, dy:-1}];
             const validDirs = dirs.filter(d => {
                 if (d.dx === -ghost.dx && d.dy === -ghost.dy) return false;
@@ -225,18 +233,25 @@ function update() {
             if (validDirs.length > 0) {
                 const rand = validDirs[Math.floor(Math.random() * validDirs.length)];
                 ghost.dx = rand.dx; ghost.dy = rand.dy;
+                ghost.x = gCenterX; ghost.y = gCenterY; // 位置を中央に強制
             } else {
                 ghost.dx *= -1; ghost.dy *= -1;
             }
+        }
+        
+        // ゴーストも移動前に壁判定を行う（壁抜け防止の強化）
+        if (canMove(ghost.x, ghost.y, ghost.dx, ghost.dy, true)) {
+            ghost.x += ghost.dx * ghost.speed;
+            ghost.y += ghost.dy * ghost.speed;
+        } else {
             ghost.x = gCenterX; ghost.y = gCenterY;
         }
-        ghost.x += ghost.dx * 1.5; ghost.y += ghost.dy * 1.5;
 
         // COLLISION
-        if (Math.hypot(ghost.x - pacman.x, ghost.y - pacman.y) < 20) {
+        if (Math.hypot(ghost.x - pacman.x, ghost.y - pacman.y) < 22) {
             if (superModeTimer > 0) {
                 ghost.x = ghost.spawnX; ghost.y = ghost.spawnY;
-                ghost.wait = 180; // 3 seconds penalty
+                ghost.wait = 120;
                 score += 200; scoreEl.innerText = score;
             } else {
                 lives--;
@@ -253,10 +268,7 @@ function update() {
 function drawWall(x, y) {
     ctx.strokeStyle = '#3333ff';
     ctx.lineWidth = 2;
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = '#0000ff';
     ctx.strokeRect(x + 4, y + 4, TILE_SIZE - 8, TILE_SIZE - 8);
-    ctx.shadowBlur = 0;
 }
 
 function draw() {
@@ -279,30 +291,25 @@ function draw() {
 
     if (fruit.active) {
         ctx.fillStyle = '#ff0000';
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = '#ff5555';
+        ctx.shadowBlur = 10; ctx.shadowColor = '#ff5555';
         ctx.beginPath(); ctx.arc(fruit.x, fruit.y, 10, 0, Math.PI*2); ctx.fill();
         ctx.shadowBlur = 0;
     }
 
     // Pacman
     ctx.fillStyle = superModeTimer > 0 ? (superModeTimer % 20 < 10 ? '#fff' : '#ffff00') : '#ffff00';
-    ctx.shadowBlur = 10; ctx.shadowColor = ctx.fillStyle;
     ctx.beginPath();
     const mouthAngle = pacman.mouthOpen * Math.PI;
     const rotation = [0, Math.PI/2, Math.PI, -Math.PI/2][pacman.direction];
     ctx.translate(pacman.x, pacman.y); ctx.rotate(rotation);
     ctx.arc(0, 0, pacman.radius, mouthAngle, 2 * Math.PI - mouthAngle); ctx.lineTo(0, 0); ctx.fill();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.shadowBlur = 0;
 
     // Ghosts
     ghosts.forEach(ghost => {
         if (ghost.wait > 0) return;
         ctx.fillStyle = superModeTimer > 0 ? (superModeTimer < 120 && superModeTimer % 20 < 10 ? '#fff' : '#0000ff') : ghost.color;
-        ctx.shadowBlur = 10; ctx.shadowColor = ctx.fillStyle;
         ctx.beginPath(); ctx.arc(ghost.x, ghost.y, 12, Math.PI, 0); ctx.lineTo(ghost.x + 12, ghost.y + 12); ctx.lineTo(ghost.x - 12, ghost.y + 12); ctx.fill();
-        ctx.shadowBlur = 0;
         ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ghost.x - 4, ghost.y - 2, 4, 0, Math.PI*2); ctx.arc(ghost.x + 4, ghost.y - 2, 4, 0, Math.PI*2); ctx.fill();
         ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(ghost.x - 4, ghost.y - 2, 1.5, 0, Math.PI*2); ctx.arc(ghost.x + 4, ghost.y - 2, 1.5, 0, Math.PI*2); ctx.fill();
     });
@@ -320,8 +327,5 @@ function gameWin() {
     winScoreEl.innerText = score;
 }
 
-function resetGame() {
-    initGame();
-}
-
+function resetGame() { initGame(); }
 window.onload = initGame;
