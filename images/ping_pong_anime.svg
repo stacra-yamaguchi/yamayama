@@ -1,0 +1,78 @@
+<svg width="1280" height="720" viewBox="0 0 1280 720" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Neo Pong Anime Thumbnail</title>
+  <desc id="desc">Anime style ping pong scene for game list thumbnail.</desc>
+  <defs>
+    <linearGradient id="bg" x1="640" y1="0" x2="640" y2="720" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#090E24"/>
+      <stop offset="1" stop-color="#0A1E3D"/>
+    </linearGradient>
+    <radialGradient id="glowLeft" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(352 388) rotate(90) scale(300 320)">
+      <stop stop-color="#63F8FF" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#63F8FF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowRight" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(932 388) rotate(90) scale(300 320)">
+      <stop stop-color="#FF75C9" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#FF75C9" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="court" x1="640" y1="300" x2="640" y2="640" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#173763" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#102541" stop-opacity="0.98"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="720" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1280" height="720" fill="url(#glowLeft)"/>
+  <rect x="0" y="0" width="1280" height="720" fill="url(#glowRight)"/>
+
+  <g opacity="0.2" stroke="#8ED5FF">
+    <path d="M0 96H1280"/>
+    <path d="M0 176H1280"/>
+    <path d="M0 256H1280"/>
+    <path d="M0 336H1280"/>
+    <path d="M0 416H1280"/>
+  </g>
+
+  <rect x="140" y="298" width="1000" height="320" rx="28" fill="url(#court)" stroke="#73D4FF" stroke-opacity="0.5" stroke-width="3"/>
+  <path d="M640 298V618" stroke="#A6E4FF" stroke-opacity="0.6" stroke-width="4" stroke-dasharray="16 14"/>
+
+  <g filter="url(#soft)">
+    <ellipse cx="360" cy="536" rx="150" ry="36" fill="#4BEFFF" fill-opacity="0.4"/>
+    <ellipse cx="922" cy="536" rx="150" ry="36" fill="#FF7FD0" fill-opacity="0.4"/>
+  </g>
+
+  <g transform="translate(292 230)">
+    <circle cx="72" cy="54" r="44" fill="#FFE8E0"/>
+    <path d="M28 40C28 8 60 -10 87 6C112 20 126 56 108 84C89 66 58 72 35 60L28 40Z" fill="#1A2E6D"/>
+    <path d="M38 84C52 100 76 106 98 98" stroke="#1A2E6D" stroke-width="6" stroke-linecap="round"/>
+    <rect x="38" y="100" width="72" height="124" rx="24" fill="#66EFFF"/>
+    <rect x="48" y="112" width="52" height="74" rx="18" fill="#2BC5FF"/>
+    <path d="M96 136L170 174" stroke="#D7F7FF" stroke-width="18" stroke-linecap="round"/>
+    <circle cx="188" cy="182" r="34" fill="#F6FCFF" stroke="#60EFFF" stroke-width="7"/>
+  </g>
+
+  <g transform="translate(836 230)">
+    <circle cx="72" cy="54" r="44" fill="#FFE5EC"/>
+    <path d="M28 44C31 8 66 -8 94 8C117 22 128 58 112 88C92 70 66 74 40 62L28 44Z" fill="#8B295D"/>
+    <path d="M32 88C50 104 76 108 100 98" stroke="#8B295D" stroke-width="6" stroke-linecap="round"/>
+    <rect x="36" y="100" width="76" height="124" rx="24" fill="#FF79C9"/>
+    <rect x="48" y="112" width="52" height="74" rx="18" fill="#FF4FAF"/>
+    <path d="M50 136L-16 176" stroke="#FFD9EC" stroke-width="18" stroke-linecap="round"/>
+    <circle cx="-34" cy="184" r="34" fill="#FFF6FB" stroke="#FF7FD0" stroke-width="7"/>
+  </g>
+
+  <g>
+    <circle cx="628" cy="338" r="16" fill="#FFF"/>
+    <path d="M628 312L628 364" stroke="#FFF" stroke-opacity="0.6" stroke-width="5" stroke-linecap="round"/>
+    <path d="M598 338L658 338" stroke="#FFF" stroke-opacity="0.6" stroke-width="5" stroke-linecap="round"/>
+  </g>
+
+  <text x="120" y="124" fill="#E8F8FF" font-family="Outfit, 'Noto Sans JP', sans-serif" font-size="74" font-weight="800" letter-spacing="2">
+    NEO PONG
+  </text>
+  <text x="122" y="176" fill="#8DD9FF" font-family="Outfit, 'Noto Sans JP', sans-serif" font-size="30" font-weight="600" letter-spacing="3">
+    ANIME CYBER ARENA
+  </text>
+</svg>

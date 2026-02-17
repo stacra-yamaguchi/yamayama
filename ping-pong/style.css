@@ -1,14 +1,19 @@
+* {
+    box-sizing: border-box;
+}
+
 body {
     margin: 0;
-    padding: 0;
+    padding: 12px;
     background-color: #050510;
     color: #fff;
     font-family: 'Press Start 2P', cursive;
     display: flex;
     justify-content: center;
-    align-items: center;
-    height: 100vh;
-    overflow: hidden;
+    align-items: flex-start;
+    min-height: 100dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
     position: relative;
 }
 
@@ -16,7 +21,7 @@ body {
 body::before {
     content: " ";
     display: block;
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     bottom: 0;
@@ -31,7 +36,8 @@ body::before {
     text-align: center;
     position: relative;
     border: 4px solid #00f3ff;
-    padding: 20px;
+    padding: clamp(10px, 2vh, 20px);
+    width: min(960px, 100%);
     box-shadow: 0 0 20px #00f3ff, inset 0 0 20px rgba(0, 243, 255, 0.2);
     background: rgba(0, 20, 25, 0.8);
     backdrop-filter: blur(5px);
@@ -50,12 +56,131 @@ body::before {
     text-transform: uppercase;
 }
 
+.character-select {
+    width: 88%;
+    margin: 0 auto 16px auto;
+    border: 1px solid rgba(124, 255, 248, 0.35);
+    background: rgba(6, 20, 34, 0.75);
+    padding: 14px 12px 12px 12px;
+    box-shadow: inset 0 0 18px rgba(0, 243, 255, 0.12);
+}
+
+.character-select.is-hidden {
+    display: none;
+}
+
+.character-select-title {
+    font-size: 13px;
+    color: #bdf8ff;
+    margin: 0 0 8px 0;
+    letter-spacing: 1px;
+}
+
+.character-select-note {
+    margin: 0 0 10px 0;
+    font-size: 8px;
+    color: #89cad8;
+    line-height: 1.7;
+}
+
+.character-options {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.character-option {
+    appearance: none;
+    border: 1px solid rgba(168, 215, 223, 0.35);
+    background: rgba(8, 18, 32, 0.8);
+    color: #d8f4ff;
+    padding: 6px 4px;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    font-family: 'Press Start 2P', cursive;
+}
+
+.character-option:hover {
+    transform: translateY(-2px);
+    border-color: rgba(124, 255, 248, 0.8);
+    box-shadow: 0 0 10px rgba(124, 255, 248, 0.3);
+}
+
+.character-option.is-selected {
+    border-color: #7cfff8;
+    box-shadow: 0 0 12px rgba(124, 255, 248, 0.35), inset 0 0 8px rgba(124, 255, 248, 0.15);
+}
+
+.character-thumb {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    object-fit: contain;
+    background: radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.02));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 6px;
+}
+
+.character-name {
+    display: block;
+    font-size: 7px;
+    line-height: 1.4;
+    min-height: 20px;
+}
+
+.character-traits {
+    display: block;
+    font-size: 6px;
+    line-height: 1.5;
+    color: #8fc1cb;
+    min-height: 18px;
+}
+
+.start-match-btn {
+    appearance: none;
+    border: 1px solid #7cfff8;
+    background: rgba(0, 243, 255, 0.12);
+    color: #dfffff;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 9px;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.start-match-btn:hover {
+    transform: translateY(-1px);
+    background: rgba(0, 243, 255, 0.2);
+    box-shadow: 0 0 10px rgba(124, 255, 248, 0.32);
+}
+
 .score-board {
     display: flex;
     justify-content: space-between;
-    width: 80%;
+    gap: 14px;
+    width: 88%;
     margin: 0 auto 20px auto;
-    font-size: 40px;
+}
+
+.score-card {
+    flex: 1;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(0, 12, 24, 0.6);
+    padding: 10px 12px;
+    box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.05);
+}
+
+.score-name {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: #a9d7df;
+}
+
+#player-score,
+#computer-score {
+    font-size: 34px;
     text-shadow: 0 0 10px currentColor;
 }
 
@@ -67,12 +192,32 @@ body::before {
     color: #ff0055; /* Neon Red */
 }
 
+.phase-board {
+    width: 88%;
+    margin: 0 auto 14px auto;
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #89cad8;
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.2);
+}
+
+#phase-label {
+    color: #7de7ff;
+}
+
+#rally-count {
+    color: #ffc57a;
+}
+
 canvas {
     background-color: #0a0a14;
     border: 2px solid #333;
     display: block;
     margin: 0 auto;
-    max-width: 100%;
+    width: min(100%, 800px);
+    height: auto;
+    aspect-ratio: 8 / 5;
     box-shadow: 
         inset 0 0 50px rgba(0,0,0,0.8), 
         0 0 15px rgba(0, 243, 255, 0.3);
@@ -81,9 +226,10 @@ canvas {
 
 .controls {
     margin-top: 15px;
-    font-size: 12px;
+    font-size: 11px;
     color: #888;
     text-shadow: 0 0 2px #fff;
+    line-height: 1.6;
 }
 
 .back-link {
@@ -106,7 +252,7 @@ canvas {
     .game-container {
         padding: 10px;
         border-width: 2px;
-        width: 95%;
+        width: 100%;
     }
     canvas {
         width: 100%;
@@ -116,6 +262,69 @@ canvas {
         font-size: 20px;
     }
     .score-board {
-        font-size: 24px;
+        width: 100%;
+        gap: 8px;
+    }
+    .score-name {
+        font-size: 8px;
+    }
+    #player-score,
+    #computer-score {
+        font-size: 22px;
+    }
+    .phase-board {
+        width: 100%;
+        font-size: 8px;
+    }
+    .character-select {
+        width: 100%;
+    }
+    .character-options {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .character-name {
+        min-height: 0;
+    }
+    .character-traits {
+        min-height: 0;
+    }
+}
+
+@media (max-height: 760px) {
+    body {
+        padding: 8px;
+    }
+    .game-title {
+        font-size: 20px;
+        margin-bottom: 10px;
+    }
+    .score-board {
+        margin-bottom: 10px;
+    }
+    .phase-board {
+        margin-bottom: 8px;
+    }
+    .controls {
+        margin-top: 10px;
+        font-size: 9px;
+    }
+    .back-link {
+        margin-top: 10px;
+        font-size: 10px;
+    }
+}
+
+@media (max-height: 640px) {
+    .game-title {
+        font-size: 16px;
+        letter-spacing: 2px;
+    }
+    #player-score,
+    #computer-score {
+        font-size: 18px;
+    }
+    .score-name,
+    .phase-board {
+        font-size: 7px;
     }
 }

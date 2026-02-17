@@ -11,37 +11,90 @@
 
 <body>
     <div class="game-container">
-
-        <!-- Map Screen -->
-        <div id="map-screen" class="screen active">
-            <div class="map-view">
-                <div id="player"></div>
+        <div id="world-screen" class="screen active">
+            <div class="world-top">
+                <div class="map-frame">
+                    <h2>全体マップ</h2>
+                    <div id="world-map" class="world-map"></div>
+                </div>
+                <div class="side-panel">
+                    <div class="panel">
+                        <h3>ステータス</h3>
+                        <p id="status-text"></p>
+                    </div>
+                    <div class="panel">
+                        <h3>パーティ</h3>
+                        <p id="party-text"></p>
+                    </div>
+                    <div class="panel">
+                        <h3>アイテム</h3>
+                        <p id="inventory-text"></p>
+                    </div>
+                </div>
             </div>
             <div class="message-window">
-                <p>ほうこうキー で いどう。<br>モンスター が あらわれる かも？</p>
+                <p id="world-message"></p>
+            </div>
+            <div class="hint-window">
+                <p>ほうこうキー: いどう / Enter: はいる / 街や城でセーブ</p>
             </div>
         </div>
 
-        <!-- Battle Screen -->
+        <div id="location-screen" class="screen">
+            <div class="location-top">
+                <div class="location-map-frame">
+                    <h2 id="location-title"></h2>
+                    <p id="location-desc"></p>
+                    <div id="location-map" class="location-map"></div>
+                    <p id="location-hint" class="location-hint"></p>
+                </div>
+                <div class="location-side">
+                    <div class="panel compact">
+                        <h3>探索ステータス</h3>
+                        <p id="location-status"></p>
+                    </div>
+                    <div class="panel compact">
+                        <h3>探索パーティ</h3>
+                        <p id="location-party"></p>
+                    </div>
+                    <div class="command-window">
+                        <h3 id="location-menu-title">行動</h3>
+                        <ul id="location-options"></ul>
+                    </div>
+                </div>
+            </div>
+            <div class="message-window">
+                <p id="location-message"></p>
+            </div>
+        </div>
+
         <div id="battle-screen" class="screen">
-            <div class="battle-view">
-                <div class="enemy" id="enemy">
-                    <div class="enemy-visual"></div>
+            <div class="battle-stage">
+                <div class="party-stage">
+                    <h3>勇者パーティ</h3>
+                    <div id="battle-party" class="battle-party"></div>
+                </div>
+                <div class="enemy-stage">
+                    <h3 id="enemy-name"></h3>
+                    <img id="enemy-sprite" class="enemy-sprite" alt="enemy">
+                    <p>HP: <span id="enemy-hp"></span></p>
                 </div>
             </div>
             <div class="status-window">
-                <p>勇者 LV:10 HP:<span id="hp-val">100</span>/100</p>
+                <p id="battle-status"></p>
             </div>
             <div class="battle-ui-bottom">
                 <div class="command-window">
-                    <ul>
-                        <li class="selected" data-cmd="fight">たたかう</li>
-                        <li data-cmd="spell">じゅもん</li>
+                    <h3>コマンド</h3>
+                    <ul id="battle-options">
+                        <li class="selected" data-cmd="attack">こうげき</li>
+                        <li data-cmd="skill">ひっさつ</li>
+                        <li data-cmd="item">どうぐ</li>
                         <li data-cmd="run">にげる</li>
                     </ul>
                 </div>
                 <div class="message-window battle-message">
-                    <p id="msg-text">スライム・バグ が あらわれた！</p>
+                    <p id="battle-message"></p>
                 </div>
             </div>
         </div>

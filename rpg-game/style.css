@@ -1,160 +1,490 @@
 :root {
-    --bg-color: #000;
-    --border-color: #fff;
-    --text-color: #fff;
+    --bg-color: #081218;
+    --panel-color: #0f1f28;
+    --border-color: #d6f1ff;
+    --text-color: #eef8ff;
+    --world-tile-size: 18px;
+    --loc-tile-size: 30px;
+}
+
+* {
+    box-sizing: border-box;
 }
 
 body {
     margin: 0;
     padding: 0;
-    background-color: #111;
-    color: var(--text-color);
-    font-family: 'DotGothic16', sans-serif;
+    min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
-    overflow: hidden;
+    color: var(--text-color);
+    font-family: 'DotGothic16', sans-serif;
+    background: radial-gradient(circle at 20% 20%, #18384a 0%, #070d12 60%, #04080d 100%);
+}
+
+h2,
+h3 {
+    margin: 0;
+    font-weight: normal;
 }
 
 .game-container {
-    width: 640px;
-    height: 480px;
-    background-color: var(--bg-color);
+    width: min(1120px, 97vw);
+    height: min(780px, 96vh);
     position: relative;
-    border: 4px solid #333;
-    padding: 10px;
-    box-sizing: border-box;
+    padding: 12px;
+    border: 4px solid #23485a;
+    border-radius: 10px;
+    background: var(--bg-color);
 }
 
-/* Screens */
 .screen {
-    display: none;
     width: 100%;
     height: 100%;
+    display: none;
     flex-direction: column;
+    gap: 10px;
 }
 
 .screen.active {
     display: flex;
 }
 
-/* Map Style */
-.map-view {
+.world-top,
+.location-top {
+    display: flex;
+    gap: 10px;
     flex: 1;
+    min-height: 0;
+}
+
+.map-frame,
+.location-map-frame,
+.panel,
+.command-window,
+.message-window,
+.hint-window,
+.status-window,
+.party-stage,
+.enemy-stage {
     border: 2px solid var(--border-color);
-    border-radius: 4px;
-    position: relative;
-    background-image: url('map_bg.png');
-    background-size: 200%; /* Zoomed in for scrolling effect */
-    background-position: center;
-    background-repeat: no-repeat;
-    margin-bottom: 10px;
+    border-radius: 6px;
+    background: rgba(10, 20, 26, 0.94);
+}
+
+.map-frame {
+    width: 640px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.map-frame h2,
+.location-map-frame h2,
+.command-window h3,
+.party-stage h3,
+.enemy-stage h3 {
+    color: #c8e6f8;
+    font-size: 16px;
+}
+
+.world-map {
+    width: calc(var(--world-tile-size) * 30);
+    height: calc(var(--world-tile-size) * 18);
+    display: grid;
+    grid-template-columns: repeat(30, var(--world-tile-size));
+    grid-template-rows: repeat(18, var(--world-tile-size));
+    border: 2px solid #1f3a47;
+    border-radius: 6px;
     overflow: hidden;
 }
 
-#player {
-    width: 32px;
-    height: 32px;
-    background-color: transparent;
-    background-image: url('hero.svg');
-    background-size: contain;
+.world-tile {
+    width: var(--world-tile-size);
+    height: var(--world-tile-size);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    background-size: cover;
+    image-rendering: pixelated;
+}
+
+.world-tile.ocean {
+    background-color: #1b5c95;
+}
+
+.world-tile.land {
+    background-color: #367444;
+}
+
+.world-tile.location {
+    background-position: center;
     background-repeat: no-repeat;
-    
-    /* Center the player in the view */
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    
-    z-index: 10;
+    background-size: 90%;
 }
 
-/* Battle Style */
-.battle-view {
+.world-tile.player {
+    background-image: url('assets/party/hero_knight.svg');
+    background-repeat: no-repeat;
+    background-size: 100%;
+}
+
+.world-tile.player.ship {
+    background-image: url('assets/world/icon_ship.svg');
+}
+
+.world-tile.trail-1 {
+    background-image: url('assets/party/ally_swordsman.svg');
+    background-size: 95%;
+    background-repeat: no-repeat;
+}
+
+.world-tile.trail-2 {
+    background-image: url('assets/party/ally_mage.svg');
+    background-size: 95%;
+    background-repeat: no-repeat;
+}
+
+.world-tile.trail-3 {
+    background-image: url('assets/party/ally_pirate.svg');
+    background-size: 95%;
+    background-repeat: no-repeat;
+}
+
+.world-tile.trail-4 {
+    background-image: url('assets/party/ally_priest.svg');
+    background-size: 95%;
+    background-repeat: no-repeat;
+}
+
+.side-panel {
     flex: 1;
-    border: 2px solid var(--border-color);
-    border-radius: 4px;
-    margin-bottom: 10px;
     display: flex;
-    justify-content: center;
-    align-items: center;
-    background: #000;
+    flex-direction: column;
+    gap: 8px;
 }
 
-.enemy-visual {
-    width: 120px;
-    height: 120px;
-    background-color: #ff5252;
-    clip-path: polygon(
-        20% 0%, 80% 0%, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0% 80%, 0% 20%
-    );
-    animation: bounce 1s infinite alternate;
+.panel {
+    padding: 8px;
+    min-height: 120px;
 }
 
-@keyframes bounce {
-    from { transform: translateY(0); }
-    to { transform: translateY(-10px); }
+.panel.compact {
+    min-height: 86px;
 }
 
-.status-window {
-    border: 2px solid var(--border-color);
-    border-radius: 4px;
-    padding: 10px;
-    margin-bottom: 10px;
-    font-size: 18px;
+.panel h3 {
+    margin: 0 0 6px;
+    color: #c8e6f8;
+    font-size: 15px;
 }
 
-.battle-ui-bottom {
+.panel p,
+.status-window p,
+.message-window p,
+.hint-window p,
+.location-map-frame p,
+.command-window li {
+    margin: 0;
+    white-space: pre-line;
+    line-height: 1.45;
+}
+
+.location-map-frame {
+    flex: 1;
+    padding: 8px;
     display: flex;
-    gap: 10px;
-    height: 120px;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.location-map {
+    display: grid;
+    border: 2px solid #1f3a47;
+    border-radius: 6px;
+    overflow: hidden;
+    align-self: flex-start;
+}
+
+.location-tile {
+    width: var(--loc-tile-size);
+    height: var(--loc-tile-size);
+    border: 1px solid rgba(0, 0, 0, 0.18);
+    background-size: cover;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+}
+
+.location-tile.floor-town {
+    background-color: #6fb36f;
+}
+
+.location-tile.floor-castle {
+    background-color: #78909c;
+}
+
+.location-tile.floor-dungeon {
+    background-color: #5d4a3f;
+}
+
+.location-tile.floor-elf {
+    background-color: #7bcf92;
+}
+
+.location-tile.floor-demon {
+    background-color: #45205f;
+}
+
+.location-tile.wall {
+    background-color: #2a3640;
+}
+
+.location-tile.water {
+    background-color: #2c72a8;
+}
+
+.location-tile.player {
+    background-image: url('assets/party/hero_knight.svg') !important;
+}
+
+.location-tile.entity {
+    background-position: center;
+    background-size: 95%;
+}
+
+.location-tile.entity.shop {
+    background-image: url('assets/objects/obj_shop.svg');
+}
+
+.location-tile.entity.inn {
+    background-image: url('assets/objects/obj_inn.svg');
+}
+
+.location-tile.entity.guild {
+    background-image: url('assets/objects/obj_guild.svg');
+}
+
+.location-tile.entity.save {
+    background-image: url('assets/objects/obj_save.svg');
+}
+
+.location-tile.entity.chest {
+    background-image: url('assets/objects/obj_chest.svg');
+}
+
+.location-tile.entity.throne {
+    background-image: url('assets/objects/obj_throne.svg');
+}
+
+.location-tile.entity.boss {
+    background-image: url('assets/objects/obj_boss.svg');
+}
+
+.location-tile.entity.exit {
+    background-image: url('assets/objects/obj_exit.svg');
+}
+
+.location-tile.entity.trial {
+    background-image: url('assets/objects/obj_trial.svg');
+}
+
+.location-tile.entity.npc {
+    background-image: url('assets/party/ally_swordsman.svg');
+}
+
+.location-side {
+    width: 330px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.location-hint {
+    color: #9bc1d8;
 }
 
 .command-window {
-    width: 150px;
-    border: 2px solid var(--border-color);
-    border-radius: 4px;
-    padding: 10px;
+    padding: 8px;
 }
 
 .command-window ul {
-    list-style: none;
+    margin: 8px 0 0;
     padding: 0;
-    margin: 0;
+    list-style: none;
 }
 
 .command-window li {
-    padding: 5px 10px;
-    cursor: pointer;
+    padding: 6px 6px 6px 18px;
     position: relative;
-    font-size: 18px;
 }
 
 .command-window li.selected::before {
     content: '▶';
     position: absolute;
-    left: -5px;
+    left: 2px;
+}
+
+.command-window li.disabled {
+    color: #6a7f8b;
 }
 
 .message-window {
-    flex: 1;
-    border: 2px solid var(--border-color);
-    border-radius: 4px;
+    min-height: 92px;
     padding: 10px;
-    font-size: 18px;
-    line-height: 1.6;
+}
+
+.hint-window {
+    padding: 8px;
+    color: #9bc1d8;
+}
+
+.battle-stage {
+    flex: 1;
+    display: flex;
+    gap: 10px;
+    min-height: 0;
+}
+
+.party-stage {
+    flex: 1;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.battle-party {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.battle-member {
+    width: 92px;
+    padding: 6px;
+    border: 1px solid #8fb6ca;
+    border-radius: 6px;
+    background: rgba(30, 58, 76, 0.6);
+    text-align: center;
+}
+
+.battle-member img {
+    width: 42px;
+    height: 42px;
+    image-rendering: pixelated;
+}
+
+.battle-member p {
+    margin: 2px 0 0;
+    font-size: 12px;
+}
+
+.enemy-stage {
+    width: 300px;
+    padding: 10px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+}
+
+.enemy-sprite {
+    width: 170px;
+    height: 170px;
+    image-rendering: pixelated;
+    animation: enemy-float 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes enemy-float {
+    from {
+        transform: translateY(0);
+    }
+
+    to {
+        transform: translateY(-8px);
+    }
+}
+
+.status-window {
+    padding: 10px;
+    min-height: 56px;
+}
+
+.battle-ui-bottom {
+    display: flex;
+    gap: 10px;
+    min-height: 180px;
+}
+
+.battle-ui-bottom .command-window {
+    width: 240px;
+}
+
+.battle-message {
+    flex: 1;
 }
 
 .back-link {
     position: absolute;
-    bottom: -30px;
+    bottom: -28px;
     left: 0;
-    color: #888;
+    color: #9cc7dc;
     text-decoration: none;
     font-size: 14px;
 }
 
 .back-link:hover {
     color: #fff;
+}
+
+@media (max-width: 1000px) {
+    :root {
+        --world-tile-size: min(2.9vw, 16px);
+        --loc-tile-size: min(5.2vw, 28px);
+    }
+
+    .game-container {
+        height: auto;
+        min-height: 95vh;
+    }
+
+    .world-top,
+    .location-top,
+    .battle-stage,
+    .battle-ui-bottom {
+        flex-direction: column;
+    }
+
+    .map-frame,
+    .location-side,
+    .enemy-stage,
+    .battle-ui-bottom .command-window {
+        width: 100%;
+    }
+
+    .world-map {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 30 / 18;
+        grid-template-columns: repeat(30, 1fr);
+        grid-template-rows: repeat(18, 1fr);
+    }
+
+    .world-tile {
+        width: auto;
+        height: auto;
+        aspect-ratio: 1 / 1;
+    }
+
+    .location-map {
+        width: 100%;
+    }
+
+    .location-tile {
+        width: auto;
+        height: auto;
+        aspect-ratio: 1 / 1;
+    }
 }

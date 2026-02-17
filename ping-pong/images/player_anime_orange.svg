@@ -1,0 +1,52 @@
+<svg width="320" height="420" viewBox="0 0 320 420" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Ai Sticker Orange</title>
+  <desc id="desc">Cute sticker style ping pong character in orange.</desc>
+  <defs>
+    <linearGradient id="hair" x1="88" y1="66" x2="236" y2="170" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFD6B3"/>
+      <stop offset="1" stop-color="#D25F39"/>
+    </linearGradient>
+    <linearGradient id="outfit" x1="160" y1="210" x2="160" y2="352" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFD7A1"/>
+      <stop offset="1" stop-color="#FF8B3A"/>
+    </linearGradient>
+  </defs>
+
+  <ellipse cx="160" cy="394" rx="76" ry="18" fill="#331A0E" fill-opacity="0.3"/>
+
+  <path d="M94 232L70 274" stroke="#FFFFFF" stroke-width="40" stroke-linecap="round"/>
+  <path d="M226 232L260 274" stroke="#FFFFFF" stroke-width="40" stroke-linecap="round"/>
+  <path d="M145 326L142 368" stroke="#FFFFFF" stroke-width="40" stroke-linecap="round"/>
+  <path d="M176 326L178 368" stroke="#FFFFFF" stroke-width="40" stroke-linecap="round"/>
+  <rect x="102" y="190" width="116" height="150" rx="46" fill="url(#outfit)" stroke="#FFFFFF" stroke-width="18"/>
+  <circle cx="160" cy="122" r="76" fill="#FFECDD" stroke="#FFFFFF" stroke-width="18"/>
+
+  <path d="M94 232L70 274" stroke="#4A3426" stroke-width="14" stroke-linecap="round"/>
+  <path d="M226 232L260 274" stroke="#4A3426" stroke-width="14" stroke-linecap="round"/>
+  <path d="M145 326L142 368" stroke="#4A3426" stroke-width="14" stroke-linecap="round"/>
+  <path d="M176 326L178 368" stroke="#4A3426" stroke-width="14" stroke-linecap="round"/>
+  <rect x="102" y="190" width="116" height="150" rx="46" fill="url(#outfit)" stroke="#4A3426" stroke-width="6"/>
+  <circle cx="160" cy="122" r="76" fill="#FFECDD" stroke="#4A3426" stroke-width="6"/>
+
+  <path d="M92 126C92 80 125 52 163 52C201 52 232 82 232 126C223 113 205 103 181 102C156 101 127 111 92 126Z" fill="url(#hair)" stroke="#4A3426" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M214 84L224 100L204 100" fill="#FFE6CC"/>
+
+  <ellipse cx="137" cy="131" rx="13" ry="15" fill="#7D3F2A"/>
+  <ellipse cx="185" cy="131" rx="13" ry="15" fill="#7D3F2A"/>
+  <ellipse cx="133" cy="127" rx="4" ry="4" fill="#FFFFFF"/>
+  <ellipse cx="181" cy="127" rx="4" ry="4" fill="#FFFFFF"/>
+  <ellipse cx="118" cy="152" rx="10" ry="5" fill="#FFBCC3" fill-opacity="0.9"/>
+  <ellipse cx="203" cy="152" rx="10" ry="5" fill="#FFBCC3" fill-opacity="0.9"/>
+  <path d="M148 165C155 171 167 171 174 165" stroke="#D67A7E" stroke-width="5" stroke-linecap="round"/>
+
+  <rect x="145" y="222" width="30" height="90" rx="12" fill="#FFF7EC" fill-opacity="0.58"/>
+
+  <path d="M260 274L287 288" stroke="#FFFFFF" stroke-width="24" stroke-linecap="round"/>
+  <circle cx="297" cy="293" r="24" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="12"/>
+  <path d="M260 274L287 288" stroke="#4A3426" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="297" cy="293" r="24" fill="#FFFFFF" stroke="#4A3426" stroke-width="4"/>
+  <circle cx="297" cy="293" r="8" fill="#FFD199"/>
+
+  <path d="M242 82L252 96" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/>
+  <path d="M252 82L242 96" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/>
+</svg>
