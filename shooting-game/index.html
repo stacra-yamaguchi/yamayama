@@ -20,20 +20,35 @@
         </div>
         <h1 class="game-title">GALACTIC SHOOTER</h1>
         <div class="score-display">SCORE: <span id="score">0</span> | LIVES: <span id="lives">3</span></div>
+        <div class="best-display">BEST: <span id="best-score">0</span> | REC: <span id="best-date">-</span></div>
         <div class="game-over" id="game-over">
             <h2>GAME OVER</h2>
             <p>Score: <span id="final-score">0</span></p>
             <button onclick="resetGame()">PLAY AGAIN</button>
         </div>
         <canvas id="gameCanvas" width="600" height="800"></canvas>
+        <div class="mobile-controls" aria-label="Touch Controls">
+            <div class="control-pad">
+                <button id="btn-up" class="control-btn" type="button" aria-label="Move Up">▲</button>
+                <div class="control-row">
+                    <button id="btn-left" class="control-btn" type="button" aria-label="Move Left">◀</button>
+                    <button id="btn-right" class="control-btn" type="button" aria-label="Move Right">▶</button>
+                </div>
+                <button id="btn-down" class="control-btn" type="button" aria-label="Move Down">▼</button>
+            </div>
+            <div class="action-pad">
+                <button id="btn-shoot" class="action-btn shoot-btn" type="button" aria-label="Shoot">SHOT</button>
+                <button id="btn-bomber" class="action-btn bomber-btn" type="button" aria-label="Bomber">BOMBER</button>
+            </div>
+        </div>
         <div class="bottom-hud">
             <div class="hud-item">LIVES: <span id="lives-bottom">3</span></div>
             <div class="hud-item">BOMBERS: <span id="bombers-bottom">1</span></div>
         </div>
-        <p class="controls">MOVE: Arrow Keys | SHOOT: Space | BOMBER: B</p>
+        <p class="controls">MOVE: Arrow Keys / Touch | SHOOT: Space / SHOT | BOMBER: B / BOMBER</p>
         <div class="game-meta">
-            <span>Version 1.0.0</span>
-            <span>Last Updated: 2026-02-17 20:25 JST</span>
+            <span>Version 1.0.4</span>
+            <span>Last Updated: 2026-02-17 22:12 JST</span>
         </div>
         <a href="../index.html" class="back-link">← Back to Game Center</a>
     </div>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEON BREAKER</title>
+    <link rel="icon" href="../favicon.png" type="image/png">
+    <link rel="icon" href="../android-chrome-192x192.png" sizes="192x192" type="image/png">
+    <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+    <meta name="theme-color" content="#09111f">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="game-container">
+        <h1 class="game-title">NEON BREAKER</h1>
+
+        <div class="hud">
+            <div class="hud-card">STAGE <span id="stage">1</span></div>
+            <div class="hud-card">BLOCKS <span id="blocks-left">100</span></div>
+            <div class="hud-card">SCORE <span id="score">0</span></div>
+            <div class="hud-card">LIFE <span id="lives">3</span></div>
+        </div>
+
+        <div class="effect-board">
+            <div id="slow-effect">SLOW: OFF</div>
+            <div id="split-effect">SPLIT: OFF</div>
+        </div>
+
+        <div class="canvas-wrapper">
+            <canvas id="game" width="900" height="620"></canvas>
+            <div id="overlay" class="overlay hidden">
+                <p id="overlay-message">READY?</p>
+                <button id="restart-btn" type="button">RESTART</button>
+            </div>
+        </div>
+
+        <p class="controls">
+            左右キー / A,D / マウス / タッチで操作。ランダムアイテム: SLOW(10s), SPLIT(10s)
+        </p>
+
+        <div class="game-meta">
+            <span>Version 1.0.0</span>
+            <span>Last Updated: 2026-02-17 22:21 JST</span>
+        </div>
+
+        <a href="../index.html" class="back-link">← Back to Game Center</a>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

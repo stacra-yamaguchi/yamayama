@@ -6,6 +6,12 @@ const gameOverEl = document.getElementById('game-over');
 const finalScoreEl = document.getElementById('final-score');
 const livesBottomEl = document.getElementById('lives-bottom');
 const bombersBottomEl = document.getElementById('bombers-bottom');
+const bestScoreEl = document.getElementById('best-score');
+const bestDateEl = document.getElementById('best-date');
+const BEST_SCORE_KEY = 'shooting-best-score-v1';
+const BEST_SCORE_AT_KEY = 'shooting-best-score-at-v1';
+let bestScore = Number(localStorage.getItem(BEST_SCORE_KEY)) || 0;
+let bestScoreAt = localStorage.getItem(BEST_SCORE_AT_KEY) || '';
 
 // Transparency Helper
 function createTransparentImage(img) {
@@ -97,6 +103,33 @@ let frames = 0;
 let distance = 0;
 let bossMode = false;
 let shakeTime = 0;
+
+function formatRecordDate(isoString) {
+    if (!isoString) return '-';
+    const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) return '-';
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const hh = String(date.getHours()).padStart(2, '0');
+    const mi = String(date.getMinutes()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+}
+
+function renderBestScore() {
+    if (bestScoreEl) bestScoreEl.innerText = bestScore;
+    if (bestDateEl) bestDateEl.innerText = formatRecordDate(bestScoreAt);
+}
+
+function updateBestScore(currentScore) {
+    if (currentScore > bestScore) {
+        bestScore = currentScore;
+        bestScoreAt = new Date().toISOString();
+        localStorage.setItem(BEST_SCORE_KEY, String(bestScore));
+        localStorage.setItem(BEST_SCORE_AT_KEY, bestScoreAt);
+    }
+    renderBestScore();
+}
 
 // --- Sound System ---
 class SoundSystem {
@@ -202,14 +235,177 @@ let particles = [];
 let items = [];
 let boss = null;
 let keys = {};
+const moveKeyCodes = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+const mobileButtons = {
+    up: document.getElementById('btn-up'),
+    down: document.getElementById('btn-down'),
+    left: document.getElementById('btn-left'),
+    right: document.getElementById('btn-right'),
+    shoot: document.getElementById('btn-shoot'),
+    bomber: document.getElementById('btn-bomber')
+};
+let autoShootTimer = null;
+let activeCanvasTouchId = null;
+let bomberTapLockUntil = 0;
+
+function firePlayerShot() {
+    if (isGameOver) return;
+    shoot();
+    sound.playShoot();
+}
+
+function startAutoShoot() {
+    if (isGameOver || autoShootTimer !== null) return;
+    firePlayerShot();
+    autoShootTimer = window.setInterval(() => {
+        if (isGameOver) { stopAutoShoot(); return; }
+        firePlayerShot();
+    }, 130);
+}
+
+function stopAutoShoot() {
+    if (autoShootTimer === null) return;
+    clearInterval(autoShootTimer);
+    autoShootTimer = null;
+}
+
+function resetMovementKeys() {
+    moveKeyCodes.forEach(code => { keys[code] = false; });
+}
+
+function clearMobileInputState() {
+    resetMovementKeys();
+    stopAutoShoot();
+    activeCanvasTouchId = null;
+}
+
+function bindHoldButton(button, onPress, onRelease) {
+    if (!button) return;
+    const press = (e) => {
+        e.preventDefault();
+        if ('pointerId' in e && button.setPointerCapture) button.setPointerCapture(e.pointerId);
+        onPress();
+    };
+    const release = (e) => {
+        e.preventDefault();
+        onRelease();
+    };
+    button.addEventListener('contextmenu', e => e.preventDefault());
+    if (window.PointerEvent) {
+        button.addEventListener('pointerdown', press);
+        button.addEventListener('pointerup', release);
+        button.addEventListener('pointercancel', release);
+        button.addEventListener('pointerleave', release);
+    } else {
+        button.addEventListener('touchstart', press, { passive: false });
+        button.addEventListener('touchend', release, { passive: false });
+        button.addEventListener('touchcancel', release, { passive: false });
+        button.addEventListener('mousedown', press);
+        button.addEventListener('mouseup', release);
+        button.addEventListener('mouseleave', release);
+    }
+}
+
+function bindPressButton(button, onPress) {
+    if (!button) return;
+    const press = (e) => {
+        e.preventDefault();
+        onPress();
+    };
+    button.addEventListener('contextmenu', e => e.preventDefault());
+    if (window.PointerEvent) {
+        button.addEventListener('pointerdown', press);
+    } else {
+        button.addEventListener('touchstart', press, { passive: false });
+        button.addEventListener('mousedown', press);
+    }
+}
+
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+}
+
+function movePlayerToClient(clientX, clientY) {
+    if (isGameOver) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
+    player.x = clamp(x, 30, canvas.width - 30);
+    player.y = clamp(y, 30, canvas.height - 30);
+}
+
+bindHoldButton(mobileButtons.left, () => { keys['ArrowLeft'] = true; }, () => { keys['ArrowLeft'] = false; });
+bindHoldButton(mobileButtons.right, () => { keys['ArrowRight'] = true; }, () => { keys['ArrowRight'] = false; });
+bindHoldButton(mobileButtons.up, () => { keys['ArrowUp'] = true; }, () => { keys['ArrowUp'] = false; });
+bindHoldButton(mobileButtons.down, () => { keys['ArrowDown'] = true; }, () => { keys['ArrowDown'] = false; });
+bindHoldButton(mobileButtons.shoot, startAutoShoot, stopAutoShoot);
+bindPressButton(mobileButtons.bomber, () => {
+    if (isGameOver) return;
+    const now = Date.now();
+    if (now < bomberTapLockUntil) return;
+    bomberTapLockUntil = now + 250;
+    triggerBomber();
+});
+
+if (window.PointerEvent) {
+    canvas.addEventListener('pointerdown', (e) => {
+        if (e.pointerType !== 'touch') return;
+        e.preventDefault();
+        activeCanvasTouchId = e.pointerId;
+        movePlayerToClient(e.clientX, e.clientY);
+    });
+    canvas.addEventListener('pointermove', (e) => {
+        if (e.pointerId !== activeCanvasTouchId) return;
+        e.preventDefault();
+        movePlayerToClient(e.clientX, e.clientY);
+    });
+    canvas.addEventListener('pointerup', (e) => {
+        if (e.pointerId === activeCanvasTouchId) activeCanvasTouchId = null;
+    });
+    canvas.addEventListener('pointercancel', (e) => {
+        if (e.pointerId === activeCanvasTouchId) activeCanvasTouchId = null;
+    });
+} else {
+    canvas.addEventListener('touchstart', (e) => {
+        if (!e.changedTouches[0]) return;
+        e.preventDefault();
+        activeCanvasTouchId = e.changedTouches[0].identifier;
+        movePlayerToClient(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+    }, { passive: false });
+    canvas.addEventListener('touchmove', (e) => {
+        const touch = Array.from(e.changedTouches).find(t => t.identifier === activeCanvasTouchId);
+        if (!touch) return;
+        e.preventDefault();
+        movePlayerToClient(touch.clientX, touch.clientY);
+    }, { passive: false });
+    canvas.addEventListener('touchend', (e) => {
+        const touch = Array.from(e.changedTouches).find(t => t.identifier === activeCanvasTouchId);
+        if (touch) activeCanvasTouchId = null;
+    }, { passive: false });
+    canvas.addEventListener('touchcancel', (e) => {
+        const touch = Array.from(e.changedTouches).find(t => t.identifier === activeCanvasTouchId);
+        if (touch) activeCanvasTouchId = null;
+    }, { passive: false });
+}
+
+window.addEventListener('blur', clearMobileInputState);
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) clearMobileInputState();
+});
 
 // Input
 document.addEventListener('keydown', e => { 
+    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space'].includes(e.code)) e.preventDefault();
     keys[e.code] = true; 
-    if (e.code === 'Space' && !isGameOver) { shoot(); sound.playShoot(); }
+    if (e.code === 'Space' && !isGameOver) firePlayerShot();
     if (e.code === 'KeyB' && !isGameOver) triggerBomber();
 });
-document.addEventListener('keyup', e => { keys[e.code] = false; });
+document.addEventListener('keyup', e => {
+    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space'].includes(e.code)) e.preventDefault();
+    keys[e.code] = false;
+});
 
 function triggerBomber() {
     if (player.bombers <= 0) return;
@@ -409,18 +605,169 @@ class Boss {
     }
 }
 
-function spawnEnemy() {
-    if (bossMode || frames % 60 !== 0) return;
-    
-    const types = [
-        { type: 'SCOUT', weight: 40, hp: 1, speed: 5, size: 40, color: '#0ff' },
-        { type: 'SNIPER', weight: 20, hp: 2, speed: 2, size: 45, color: '#f0f' },
-        { type: 'CHARGER', weight: 15, hp: 3, speed: 8, size: 35, color: '#f50' },
-        { type: 'SPREAD', weight: 15, hp: 4, speed: 3, size: 55, color: '#5f0' },
-        { type: 'TANK', weight: 10, hp: 8, speed: 1.5, size: 70, color: '#ff0' }
-    ];
+const enemyBaseTypes = {
+    SCOUT: { hp: 1, speed: 4.2, size: 40, color: '#0ff' },
+    SNIPER: { hp: 2, speed: 2.2, size: 45, color: '#f0f' },
+    CHARGER: { hp: 3, speed: 7.2, size: 35, color: '#f50' },
+    SPREAD: { hp: 4, speed: 2.8, size: 55, color: '#5f0' },
+    TANK: { hp: 8, speed: 1.6, size: 70, color: '#ff0' }
+};
 
-    // Simple weighted random selection
+const enemyStageProfiles = [
+    {
+        maxStage: 1,
+        spawnInterval: 95,
+        shootInterval: 180,
+        minShootInterval: 140,
+        movementTier: 1,
+        attackTier: 1,
+        unlockedTypes: ['SCOUT'],
+        typeWeights: { SCOUT: 100 }
+    },
+    {
+        maxStage: 2,
+        spawnInterval: 82,
+        shootInterval: 165,
+        minShootInterval: 120,
+        movementTier: 2,
+        attackTier: 1,
+        unlockedTypes: ['SCOUT', 'SNIPER'],
+        typeWeights: { SCOUT: 78, SNIPER: 22 }
+    },
+    {
+        maxStage: 4,
+        spawnInterval: 70,
+        shootInterval: 145,
+        minShootInterval: 100,
+        movementTier: 3,
+        attackTier: 2,
+        unlockedTypes: ['SCOUT', 'SNIPER', 'CHARGER'],
+        typeWeights: { SCOUT: 56, SNIPER: 24, CHARGER: 20 }
+    },
+    {
+        maxStage: 6,
+        spawnInterval: 60,
+        shootInterval: 128,
+        minShootInterval: 85,
+        movementTier: 4,
+        attackTier: 3,
+        unlockedTypes: ['SCOUT', 'SNIPER', 'CHARGER', 'SPREAD'],
+        typeWeights: { SCOUT: 40, SNIPER: 22, CHARGER: 20, SPREAD: 18 }
+    },
+    {
+        maxStage: 8,
+        spawnInterval: 52,
+        shootInterval: 116,
+        minShootInterval: 75,
+        movementTier: 5,
+        attackTier: 4,
+        unlockedTypes: ['SCOUT', 'SNIPER', 'CHARGER', 'SPREAD', 'TANK'],
+        typeWeights: { SCOUT: 30, SNIPER: 20, CHARGER: 18, SPREAD: 17, TANK: 15 }
+    },
+    {
+        maxStage: 10,
+        spawnInterval: 46,
+        shootInterval: 104,
+        minShootInterval: 64,
+        movementTier: 6,
+        attackTier: 5,
+        unlockedTypes: ['SCOUT', 'SNIPER', 'CHARGER', 'SPREAD', 'TANK'],
+        typeWeights: { SCOUT: 25, SNIPER: 20, CHARGER: 20, SPREAD: 18, TANK: 17 }
+    }
+];
+
+function getEnemyDifficultyProfile() {
+    const stage = currentLevelIdx + 1;
+    const loopBonus = Math.max(0, loopCount - 1);
+    const baseProfile = enemyStageProfiles.find(profile => stage <= profile.maxStage) || enemyStageProfiles[enemyStageProfiles.length - 1];
+    return {
+        ...baseProfile,
+        spawnInterval: Math.max(38, baseProfile.spawnInterval - loopBonus * 6),
+        shootInterval: Math.max(baseProfile.minShootInterval, baseProfile.shootInterval - loopBonus * 10),
+        movementTier: Math.min(7, baseProfile.movementTier + loopBonus),
+        attackTier: Math.min(7, baseProfile.attackTier + loopBonus),
+        speedScale: 1 + loopBonus * 0.1,
+        hpScale: 1 + loopBonus * 0.45,
+        bulletSpeedScale: 1 + loopBonus * 0.12
+    };
+}
+
+function shootEnemyBullet(e, angle, speed, size) {
+    enemyBullets.push({
+        x: e.x,
+        y: e.y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size
+    });
+}
+
+function handleEnemyShooting(e, difficulty) {
+    const angleToPlayer = Math.atan2(player.y - e.y, player.x - e.x);
+    const speedScale = difficulty.bulletSpeedScale;
+    switch (e.type) {
+        case 'SCOUT':
+            if (difficulty.attackTier <= 1) {
+                enemyBullets.push({ x: e.x, y: e.y, vx: 0, vy: 4.2 * speedScale, size: 14 });
+            } else if (difficulty.attackTier <= 3) {
+                shootEnemyBullet(e, angleToPlayer, 5.3 * speedScale, 15);
+            } else {
+                for (let offset = -0.18; offset <= 0.18; offset += 0.18) {
+                    shootEnemyBullet(e, angleToPlayer + offset, 5.8 * speedScale, 14);
+                }
+            }
+            break;
+        case 'SNIPER':
+            if (difficulty.attackTier <= 1) {
+                enemyBullets.push({ x: e.x, y: e.y, vx: 0, vy: 6.8 * speedScale, size: 12 });
+            } else if (difficulty.attackTier <= 3) {
+                shootEnemyBullet(e, angleToPlayer, 9.8 * speedScale, 10);
+            } else {
+                shootEnemyBullet(e, angleToPlayer - 0.08, 10.3 * speedScale, 10);
+                shootEnemyBullet(e, angleToPlayer + 0.08, 10.3 * speedScale, 10);
+            }
+            break;
+        case 'CHARGER':
+            if (difficulty.attackTier >= 4) {
+                shootEnemyBullet(e, angleToPlayer, 6.2 * speedScale, 13);
+            }
+            break;
+        case 'SPREAD': {
+            let spreadRange = 0.4;
+            let shots = 3;
+            if (difficulty.attackTier >= 4) {
+                spreadRange = 0.6;
+                shots = 5;
+            }
+            const step = shots === 1 ? 0 : (spreadRange * 2) / (shots - 1);
+            for (let i = 0; i < shots; i++) {
+                shootEnemyBullet(e, angleToPlayer - spreadRange + i * step, 5.1 * speedScale, 19);
+            }
+            break;
+        }
+        case 'TANK': {
+            const count = difficulty.attackTier >= 5 ? 8 : 6;
+            for (let i = 0; i < count; i++) {
+                const angle = (Math.PI * 2 * i) / count;
+                shootEnemyBullet(e, angle, 3.8 * speedScale, 24);
+            }
+            if (difficulty.attackTier >= 6) {
+                shootEnemyBullet(e, angleToPlayer, 6.0 * speedScale, 16);
+            }
+            break;
+        }
+    }
+}
+
+function spawnEnemy(difficulty) {
+    if (bossMode || frames % difficulty.spawnInterval !== 0) return;
+
+    const types = difficulty.unlockedTypes.map(type => ({
+        type,
+        ...enemyBaseTypes[type],
+        weight: difficulty.typeWeights[type] || 1
+    }));
+
     let totalWeight = types.reduce((sum, t) => sum + t.weight, 0);
     let rand = Math.random() * totalWeight;
     let selected = types[0];
@@ -429,19 +776,18 @@ function spawnEnemy() {
         rand -= t.weight;
     }
 
-    const eType = selected;
     enemies.push({
-        type: eType.type,
-        x: Math.random() * (canvas.width - eType.size) + eType.size/2,
-        y: -eType.size,
-        size: eType.size,
-        speed: eType.speed + (loopCount - 1) * 0.5,
-        color: eType.color,
-        hp: (eType.hp + currentLevelIdx) + (loopCount - 1) * 5,
+        type: selected.type,
+        x: Math.random() * (canvas.width - selected.size) + selected.size / 2,
+        y: -selected.size,
+        size: selected.size,
+        speed: selected.speed * difficulty.speedScale,
+        color: selected.color,
+        hp: Math.ceil((selected.hp + currentLevelIdx * 0.4) * difficulty.hpScale),
         phase: Math.random() * Math.PI * 2,
         wait: 0,
-        lastShot: 0,
-        targetX: Math.random() * canvas.width // For some behaviors
+        lastShot: frames - Math.floor(Math.random() * difficulty.shootInterval),
+        targetX: Math.random() * canvas.width
     });
 }
 
@@ -464,6 +810,7 @@ function handleHit() {
 function update() {
     if (isGameOver) return;
     frames++; if (!bossMode) distance++;
+    const enemyDifficulty = getEnemyDifficultyProfile();
     if (player.invincibilityFrames > 0) player.invincibilityFrames--;
     if (shakeTime > 0) shakeTime--;
 
@@ -571,61 +918,64 @@ function update() {
         });
     }
 
-    spawnEnemy();
+    spawnEnemy(enemyDifficulty);
     enemies.forEach((e, i) => {
         // Movement Logic
         switch(e.type) {
             case 'SCOUT':
-                e.x += Math.sin(frames * 0.1 + e.phase) * (4 + loopCount);
-                e.y += e.speed;
+                if (enemyDifficulty.movementTier <= 1) {
+                    e.y += e.speed;
+                } else if (enemyDifficulty.movementTier <= 3) {
+                    e.x += Math.sin(frames * 0.07 + e.phase) * (1.5 + enemyDifficulty.movementTier * 0.7);
+                    e.y += e.speed;
+                } else {
+                    e.x += Math.sin(frames * 0.1 + e.phase) * (3 + enemyDifficulty.movementTier);
+                    e.y += e.speed * 0.95;
+                }
                 break;
             case 'SNIPER':
                 if (e.y < canvas.height * 0.25) e.y += e.speed;
                 else {
-                    // Slight drift
-                    e.x += Math.cos(frames * 0.05 + e.phase) * 2;
+                    const drift = enemyDifficulty.movementTier >= 4 ? 2.8 : 1.8;
+                    e.x += Math.cos(frames * 0.04 + e.phase) * drift;
+                    if (enemyDifficulty.movementTier >= 6 && frames % 180 === 0) {
+                        e.targetX = Math.random() * (canvas.width - 120) + 60;
+                    }
+                    if (enemyDifficulty.movementTier >= 6) {
+                        e.x += (e.targetX - e.x) * 0.015;
+                    }
                 }
                 break;
             case 'CHARGER':
                 const angleToPlayer = Math.atan2(player.y - e.y, player.x - e.x);
-                e.x += Math.cos(angleToPlayer) * e.speed;
-                e.y += Math.sin(angleToPlayer) * e.speed;
+                if (enemyDifficulty.movementTier <= 3) {
+                    e.x += Math.cos(angleToPlayer) * e.speed * 0.6;
+                    e.y += e.speed * 0.9;
+                } else {
+                    e.x += Math.cos(angleToPlayer) * e.speed;
+                    e.y += Math.sin(angleToPlayer) * e.speed;
+                }
                 break;
             case 'SPREAD':
-                e.y += e.speed;
+                e.y += e.speed * 0.85;
+                e.x += Math.sin(frames * 0.05 + e.phase) * (enemyDifficulty.movementTier >= 5 ? 2.4 : 1.4);
                 break;
             case 'TANK':
                 e.y += e.speed * 0.5;
+                if (enemyDifficulty.movementTier >= 5) {
+                    e.x += Math.sin(frames * 0.03 + e.phase) * 1.2;
+                }
                 break;
             default:
                 e.y += e.speed;
         }
 
         // Shooting Logic
-        const interval = Math.max(30, 120 - currentLevelIdx * 5 - (loopCount - 1) * 10);
-        if (frames % interval === 0) {
-            const angle = Math.atan2(player.y - e.y, player.x - e.x);
-            switch(e.type) {
-                case 'SCOUT':
-                    enemyBullets.push({ x: e.x, y: e.y, vx: Math.cos(angle) * 6, vy: Math.sin(angle) * 6, size: 15 });
-                    break;
-                case 'SNIPER':
-                    enemyBullets.push({ x: e.x, y: e.y, vx: Math.cos(angle) * 12, vy: Math.sin(angle) * 12, size: 10 });
-                    break;
-                case 'SPREAD':
-                    for(let a = -0.4; a <= 0.4; a += 0.4) {
-                        enemyBullets.push({ x: e.x, y: e.y, vx: Math.cos(angle + a) * 5, vy: Math.sin(angle + a) * 5, size: 20 });
-                    }
-                    break;
-                case 'TANK':
-                    for(let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
-                        enemyBullets.push({ x: e.x, y: e.y, vx: Math.cos(a) * 4, vy: Math.sin(a) * 4, size: 25 });
-                    }
-                    break;
-                case 'CHARGER':
-                    // Chargers don't shoot
-                    break;
-            }
+        const typeIntervalFactor = e.type === 'CHARGER' ? 1.4 : e.type === 'TANK' ? 1.2 : 1;
+        const interval = Math.floor(enemyDifficulty.shootInterval * typeIntervalFactor);
+        if (frames - e.lastShot >= interval) {
+            handleEnemyShooting(e, enemyDifficulty);
+            e.lastShot = frames - Math.floor(Math.random() * 12);
         }
 
         if (Math.hypot(e.x - player.x, e.y - player.y) < e.size/2 + player.width/3) handleHit();
@@ -748,13 +1098,23 @@ function draw() {
 }
 
 function loop() { if (!isGameOver) { requestAnimationFrame(loop); update(); draw(); } }
-function endGame() { isGameOver = true; gameOverEl.style.display = 'block'; finalScoreEl.innerHTML = score; }
+function endGame() {
+    isGameOver = true;
+    clearMobileInputState();
+    updateBestScore(score);
+    gameOverEl.style.display = 'block';
+    finalScoreEl.innerHTML = score;
+}
 function resetGame() {
+    clearMobileInputState();
     isGameOver = false; score = 0; lastExtraLifeScore = 0; distance = 0; bossMode = false; boss = null; currentLevelIdx = 0;
     loopCount = 1; // Reset loop count on game over
     player.lives = 3; player.powerLevel = 0; player.weaponType = 'NORMAL'; player.bombers = 1;
     updateHUD();
     scoreEl.innerHTML = 0; enemies = []; bullets = []; enemyBullets = []; particles = []; items = [];
+    renderBestScore();
     gameOverEl.style.display = 'none'; player.x = canvas.width/2; player.y = canvas.height-100;
     loop();
 }
+
+renderBestScore();

@@ -1,0 +1,184 @@
+:root {
+    --bg-top: #071325;
+    --bg-bottom: #030913;
+    --line: #184778;
+    --text: #d9ecff;
+    --accent: #61d1ff;
+    --accent-2: #9eff7f;
+    --danger: #ff7c94;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--text);
+    font-family: "Orbitron", "Noto Sans JP", sans-serif;
+    background:
+        radial-gradient(circle at 18% 15%, rgba(72, 161, 255, 0.34), transparent 36%),
+        radial-gradient(circle at 82% 78%, rgba(40, 84, 255, 0.24), transparent 34%),
+        linear-gradient(160deg, var(--bg-top), var(--bg-bottom));
+    padding: 18px;
+}
+
+.game-container {
+    width: min(980px, 100%);
+    background: rgba(4, 14, 28, 0.82);
+    border: 1px solid rgba(119, 180, 255, 0.28);
+    border-radius: 20px;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    padding: 20px;
+}
+
+.game-title {
+    margin: 4px 0 14px;
+    text-align: center;
+    font-family: "Press Start 2P", cursive;
+    font-size: clamp(1rem, 3vw, 1.65rem);
+    color: #85dcff;
+    text-shadow: 0 0 15px rgba(120, 220, 255, 0.75);
+}
+
+.hud {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.hud-card {
+    border: 1px solid rgba(110, 185, 255, 0.36);
+    border-radius: 10px;
+    padding: 8px 10px;
+    text-align: center;
+    font-size: 0.78rem;
+    background: rgba(9, 23, 43, 0.9);
+}
+
+.hud-card span {
+    font-weight: 700;
+    color: #a9f3ff;
+}
+
+.effect-board {
+    margin: 10px 0;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.effect-board div {
+    min-width: 180px;
+    border: 1px solid rgba(132, 193, 255, 0.36);
+    border-radius: 999px;
+    padding: 6px 12px;
+    text-align: center;
+    font-size: 0.76rem;
+    background: rgba(10, 26, 46, 0.95);
+}
+
+.canvas-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+canvas {
+    width: 100%;
+    max-width: 100%;
+    display: block;
+    border-radius: 14px;
+    border: 1px solid rgba(110, 183, 255, 0.45);
+    background: linear-gradient(180deg, rgba(5, 16, 33, 0.98), rgba(6, 10, 19, 0.98));
+}
+
+.overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: center;
+    justify-content: center;
+    background: rgba(1, 8, 16, 0.78);
+    border-radius: 14px;
+}
+
+.hidden {
+    display: none;
+}
+
+#overlay-message {
+    margin: 0;
+    font-family: "Press Start 2P", cursive;
+    font-size: clamp(0.75rem, 2.7vw, 1.2rem);
+    color: #b8f6ff;
+    text-align: center;
+    white-space: pre-line;
+}
+
+#restart-btn {
+    border: 1px solid rgba(141, 217, 255, 0.66);
+    background: linear-gradient(135deg, rgba(20, 90, 141, 0.92), rgba(43, 141, 175, 0.95));
+    color: #fff;
+    font-family: "Press Start 2P", cursive;
+    font-size: 0.75rem;
+    padding: 10px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.controls {
+    margin: 12px 0 2px;
+    text-align: center;
+    font-size: 0.75rem;
+    opacity: 0.86;
+    line-height: 1.65;
+}
+
+.game-meta {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 0.7rem;
+    color: #b9d3ed;
+}
+
+.back-link {
+    display: inline-block;
+    margin-top: 14px;
+    text-decoration: none;
+    color: #8ecfff;
+    font-family: "Press Start 2P", cursive;
+    font-size: 0.65rem;
+}
+
+.back-link:hover {
+    color: #d8f6ff;
+}
+
+@media (max-width: 760px) {
+    .game-container {
+        padding: 14px;
+    }
+
+    .hud {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .effect-board div {
+        min-width: 150px;
+        font-size: 0.7rem;
+    }
+
+    .controls {
+        font-size: 0.68rem;
+    }
+}

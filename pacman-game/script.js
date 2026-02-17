@@ -8,6 +8,8 @@ const gameOverEl = document.getElementById('game-over');
 const finalScoreEl = document.getElementById('final-score');
 const gameWinEl = document.getElementById('game-win');
 const winScoreEl = document.getElementById('win-score');
+const bestScoreEl = document.getElementById('best-score');
+const bestDateEl = document.getElementById('best-date');
 
 const TILE_SIZE = 32;
 let ROWS;
@@ -62,23 +64,29 @@ const VERTICAL_MAP = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 ];
 
-const STAGE_SCORE_STEP = 1200;
 const MAX_GHOSTS = 4;
+const EXTRA_LIFE_SCORE_STEP = 5000;
+const MAX_LIVES = 9;
+const BEST_SCORE_KEY = 'pacman-best-score-v1';
+const BEST_SCORE_AT_KEY = 'pacman-best-score-at-v1';
 
 let mapLayout = [];
 let score = 0;
 let lives = 3;
 let stage = 1;
-let nextStageScore = STAGE_SCORE_STEP;
+let nextExtraLifeScore = EXTRA_LIFE_SCORE_STEP;
 let superModeTimer = 0;
 let animationId;
 let gameRunning = false;
 let pelletsRemaining = 0;
+let smallPelletsRemaining = 0;
 let fruit = { x: -1, y: -1, active: false, timer: 0 };
 let particles = [];
 let floatingTexts = [];
 let stageTransition = { active: false, timer: 0, message: '' };
 let banner = { text: '', timer: 0, color: '#00ffff' };
+let bestScore = Number(localStorage.getItem(BEST_SCORE_KEY)) || 0;
+let bestScoreAt = localStorage.getItem(BEST_SCORE_AT_KEY) || '';
 
 const pacman = {
     x: 0,
@@ -121,8 +129,31 @@ function updateBanner() {
     if (banner.timer > 0) banner.timer -= 1;
 }
 
-function getStageTarget(stageValue) {
-    return stageValue * STAGE_SCORE_STEP;
+function formatRecordDate(isoString) {
+    if (!isoString) return '-';
+    const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) return '-';
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const hh = String(date.getHours()).padStart(2, '0');
+    const mi = String(date.getMinutes()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+}
+
+function renderBestScore() {
+    if (bestScoreEl) bestScoreEl.innerText = bestScore;
+    if (bestDateEl) bestDateEl.innerText = formatRecordDate(bestScoreAt);
+}
+
+function updateBestScore(currentScore) {
+    if (currentScore > bestScore) {
+        bestScore = currentScore;
+        bestScoreAt = new Date().toISOString();
+        localStorage.setItem(BEST_SCORE_KEY, String(bestScore));
+        localStorage.setItem(BEST_SCORE_AT_KEY, bestScoreAt);
+    }
+    renderBestScore();
 }
 
 function getStageGhostCount(stageValue) {
@@ -156,9 +187,11 @@ function loadStageMap() {
     canvas.height = ROWS * TILE_SIZE;
 
     pelletsRemaining = 0;
+    smallPelletsRemaining = 0;
     for (let r = 0; r < ROWS; r += 1) {
         for (let c = 0; c < COLS; c += 1) {
             if (mapLayout[r][c] === 2 || mapLayout[r][c] === 3) pelletsRemaining += 1;
+            if (mapLayout[r][c] === 2) smallPelletsRemaining += 1;
         }
     }
 
@@ -277,7 +310,7 @@ function initGame() {
     score = 0;
     lives = 3;
     stage = 1;
-    nextStageScore = getStageTarget(stage);
+    nextExtraLifeScore = EXTRA_LIFE_SCORE_STEP;
     superModeTimer = 0;
 
     particles = [];
@@ -299,6 +332,7 @@ function initGame() {
     showBanner('STAGE 1 START', '#4facfe', 90);
     updateLivesUI();
     updateUI();
+    renderBestScore();
 
     if (animationId) cancelAnimationFrame(animationId);
     update();
@@ -382,7 +416,7 @@ function updateLivesUI() {
 function updateUI() {
     scoreEl.innerText = score;
     if (stageEl) stageEl.innerText = stage;
-    if (nextStageEl) nextStageEl.innerText = Math.max(0, nextStageScore - score);
+    if (nextStageEl) nextStageEl.innerText = smallPelletsRemaining;
 }
 
 function canMove(x, y, dx, dy) {
@@ -461,7 +495,6 @@ function triggerStageClear() {
 
 function beginNextStage() {
     stage += 1;
-    nextStageScore = getStageTarget(stage);
 
     loadStageMap();
     resetPositions();
@@ -471,16 +504,6 @@ function beginNextStage() {
     stageTransition.message = '';
 
     showBanner(`STAGE ${stage} START`, '#4facfe', 90);
-    updateUI();
-}
-
-function refillBoard() {
-    score += 300;
-    createFloatingText(pacman.x, pacman.y, 'BOARD +300');
-    showBanner('BOARD REFILL', '#ffe066', 70);
-
-    loadStageMap();
-    resetPositions();
     updateUI();
 }
 
@@ -683,6 +706,7 @@ function updatePelletCollision() {
         mapLayout[gridY][gridX] = 0;
         score += 10;
         pelletsRemaining -= 1;
+        smallPelletsRemaining -= 1;
     } else if (mapLayout[gridY][gridX] === 3) {
         mapLayout[gridY][gridX] = 0;
         score += 50;
@@ -728,6 +752,17 @@ function updateEffects() {
     updateBanner();
 }
 
+function checkExtraLifeProgress() {
+    while (score >= nextExtraLifeScore) {
+        if (lives < MAX_LIVES) {
+            lives += 1;
+            updateLivesUI();
+            showBanner('1UP!', '#7dff8e', 70);
+        }
+        nextExtraLifeScore += EXTRA_LIFE_SCORE_STEP;
+    }
+}
+
 function updateStageTransition() {
     if (!stageTransition.active) return;
 
@@ -760,10 +795,9 @@ function update() {
     movePacman();
     updatePelletCollision();
     updateGhosts();
+    checkExtraLifeProgress();
 
-    if (pelletsRemaining <= 0) refillBoard();
-
-    if (!stageTransition.active && score >= nextStageScore) {
+    if (!stageTransition.active && smallPelletsRemaining <= 0) {
         triggerStageClear();
     }
 
@@ -902,7 +936,7 @@ function draw() {
             if (tile === 1) {
                 drawWall(x, y);
             } else if (tile === 2) {
-                ctx.fillStyle = '#ffb8ae';
+                ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
                 ctx.arc(x + TILE_SIZE / 2, y + TILE_SIZE / 2, 3, 0, Math.PI * 2);
                 ctx.fill();
@@ -980,12 +1014,14 @@ function draw() {
 }
 
 function gameOver() {
+    updateBestScore(score);
     gameRunning = false;
     gameOverEl.style.display = 'block';
     finalScoreEl.innerText = score;
 }
 
 function gameWin() {
+    updateBestScore(score);
     gameRunning = false;
     gameWinEl.style.display = 'block';
     winScoreEl.innerText = score;

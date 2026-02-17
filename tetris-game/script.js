@@ -5,8 +5,14 @@ const nextContext = nextCanvas.getContext('2d');
 const scoreElement = document.getElementById('score');
 const levelElement = document.getElementById('level');
 const finalScoreElement = document.getElementById('final-score');
+const bestScoreElement = document.getElementById('best-score');
+const bestDateElement = document.getElementById('best-date');
 const startBtn = document.getElementById('restart-btn');
 const modal = document.getElementById('game-over-modal');
+const BEST_SCORE_KEY = 'tetris-best-score-v1';
+const BEST_SCORE_AT_KEY = 'tetris-best-score-at-v1';
+let bestScore = Number(localStorage.getItem(BEST_SCORE_KEY)) || 0;
+let bestScoreAt = localStorage.getItem(BEST_SCORE_AT_KEY) || '';
 
 context.scale(20, 20);
 nextContext.scale(20, 20);
@@ -281,6 +287,11 @@ function getCompletedRows() {
     return rows;
 }
 
+function getDropIntervalByLevel(level) {
+    // Levelごとに体感できるよう指数的に短くする
+    return Math.max(80, Math.floor(1000 * Math.pow(0.88, level)));
+}
+
 function applyLineClearScore(rowCount) {
     if (rowCount <= 0) return;
 
@@ -288,7 +299,7 @@ function applyLineClearScore(rowCount) {
     player.score += lineScores[rowCount] * (player.level + 1);
     player.lines += rowCount;
     player.level = Math.floor(player.lines / 10);
-    dropInterval = Math.max(100, 1000 - (player.level * 50));
+    dropInterval = getDropIntervalByLevel(player.level);
 }
 
 function startLineClearAnimation(rows) {
@@ -337,6 +348,33 @@ function updateScore() {
     levelElement.innerText = player.level;
 }
 
+function formatRecordDate(isoString) {
+    if (!isoString) return '-';
+    const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) return '-';
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const hh = String(date.getHours()).padStart(2, '0');
+    const mi = String(date.getMinutes()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+}
+
+function renderBestScore() {
+    if (bestScoreElement) bestScoreElement.innerText = bestScore;
+    if (bestDateElement) bestDateElement.innerText = formatRecordDate(bestScoreAt);
+}
+
+function updateBestScore(currentScore) {
+    if (currentScore > bestScore) {
+        bestScore = currentScore;
+        bestScoreAt = new Date().toISOString();
+        localStorage.setItem(BEST_SCORE_KEY, String(bestScore));
+        localStorage.setItem(BEST_SCORE_AT_KEY, bestScoreAt);
+    }
+    renderBestScore();
+}
+
 function createMatrix(w, h) {
     const matrix = [];
     while (h--) {
@@ -347,6 +385,7 @@ function createMatrix(w, h) {
 
 function gameOver() {
     isGameOver = true;
+    updateBestScore(player.score);
     finalScoreElement.innerText = player.score;
     modal.classList.remove('hidden');
 }
@@ -356,7 +395,7 @@ function restartGame() {
     player.score = 0;
     player.lines = 0;
     player.level = 0;
-    dropInterval = 1000;
+    dropInterval = getDropIntervalByLevel(0);
     updateScore();
     isGameOver = false;
     isLineClearAnimating = false;
@@ -371,7 +410,7 @@ function restartGame() {
 }
 
 let dropCounter = 0;
-let dropInterval = 1000;
+let dropInterval = getDropIntervalByLevel(0);
 let lastTime = 0;
 let isGameOver = false;
 let softDropUntil = 0;
@@ -527,4 +566,5 @@ startBtn.addEventListener('click', restartGame);
 // Initial start
 playerReset();
 updateScore();
+renderBestScore();
 update();

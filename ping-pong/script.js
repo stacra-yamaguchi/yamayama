@@ -6,6 +6,8 @@ const ui = {
     computerScore: document.getElementById("computer-score"),
     phase: document.getElementById("phase-label"),
     rally: document.getElementById("rally-count"),
+    bestScoreLabel: document.getElementById("best-score-label"),
+    bestDateLabel: document.getElementById("best-date-label"),
     characterSelect: document.getElementById("character-select"),
     characterOptions: document.getElementById("character-options"),
     startMatchBtn: document.getElementById("start-match-btn")
@@ -42,6 +44,9 @@ const CONFIG = {
     }
 };
 
+const BEST_SCORE_KEY = "neo-pong-best-score-v1";
+const BEST_SCORE_AT_KEY = "neo-pong-best-score-at-v1";
+
 function randomRange(min, max) {
     return Math.random() * (max - min) + min;
 }
@@ -52,6 +57,18 @@ function randomInt(min, max) {
 
 function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
+}
+
+function formatRecordDate(isoString) {
+    if (!isoString) return "-";
+    const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) return "-";
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    const hh = String(date.getHours()).padStart(2, "0");
+    const mi = String(date.getMinutes()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
 }
 
 const CHARACTER_ROSTER = [
@@ -497,6 +514,8 @@ class Game {
         this.winner = null;
         this.message = "SELECT YOUR CHARACTER";
         this.messageTimer = 70;
+        this.bestScore = Number(localStorage.getItem(BEST_SCORE_KEY)) || 0;
+        this.bestScoreAt = localStorage.getItem(BEST_SCORE_AT_KEY) || "";
 
         this.bindInput();
         this.setupCharacterSelectUi();
@@ -954,9 +973,10 @@ class Game {
         if (reached && lead >= CONFIG.minLead) {
             this.gameOver = true;
             this.winner = side;
-            this.message = side === "left" ? "YOU WIN" : "TARGET-BOT WIN";
+            this.message = side === "left" ? "GAME SET: YOU" : "GAME SET: TARGET-BOT";
             this.messageTimer = 999999;
             this.balls = [];
+            this.updateBestScore(this.player.score);
             this.updateHud();
             return;
         }
@@ -1024,6 +1044,15 @@ class Game {
         this.updateHud();
     }
 
+    updateBestScore(currentScore) {
+        if (currentScore > this.bestScore) {
+            this.bestScore = currentScore;
+            this.bestScoreAt = new Date().toISOString();
+            localStorage.setItem(BEST_SCORE_KEY, String(this.bestScore));
+            localStorage.setItem(BEST_SCORE_AT_KEY, this.bestScoreAt);
+        }
+    }
+
     updateBalls() {
         for (let i = 0; i < this.balls.length; i += 1) {
             const ball = this.balls[i];
@@ -1076,6 +1105,8 @@ class Game {
 
         ui.playerScore.innerText = this.player.score;
         ui.computerScore.innerText = this.ai.score;
+        if (ui.bestScoreLabel) ui.bestScoreLabel.innerText = `BEST SCORE: ${this.bestScore}`;
+        if (ui.bestDateLabel) ui.bestDateLabel.innerText = `REC: ${formatRecordDate(this.bestScoreAt)}`;
 
         if (this.selectionMode) {
             const selected = this.getCharacterById(this.selectedPlayerId);
@@ -1085,7 +1116,7 @@ class Game {
             const rivalInfo = rival ? `${rival.name} ${this.getTraitSummary(rival)}` : "-";
             ui.rally.innerText = `YOU ${selectedInfo} | NPC ${rivalInfo}`;
         } else if (this.gameOver) {
-            ui.phase.innerText = "STATE: GAME OVER";
+            ui.phase.innerText = "STATE: MATCH END";
         } else if (this.player.score >= 10 && this.ai.score >= 10) {
             ui.phase.innerText = `SERVE: ${this.currentServer === "left" ? "YOU" : "TARGET-BOT"} (DEUCE)`;
         } else {
@@ -1248,13 +1279,13 @@ class Game {
         ctx.shadowColor = "rgba(255,255,255,0.7)";
 
         ctx.font = "32px 'Press Start 2P', cursive";
-        ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 28);
+        ctx.fillText("GAME SET", canvas.width / 2, canvas.height / 2 - 28);
 
         ctx.font = "16px 'Press Start 2P', cursive";
-        ctx.fillText(this.winner === "left" ? "YOU WIN" : "TARGET-BOT WIN", canvas.width / 2, canvas.height / 2 + 16);
+        ctx.fillText(this.winner === "left" ? "WINNER: YOU" : "WINNER: TARGET-BOT", canvas.width / 2, canvas.height / 2 + 16);
 
         ctx.font = "10px 'Press Start 2P', cursive";
-        ctx.fillText("SPACE / ENTER / CLICK TO RESTART", canvas.width / 2, canvas.height / 2 + 54);
+        ctx.fillText("SPACE / ENTER / CLICK FOR NEXT GAME", canvas.width / 2, canvas.height / 2 + 54);
         ctx.restore();
     }
 

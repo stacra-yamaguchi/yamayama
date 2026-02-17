@@ -210,6 +210,16 @@ body::before {
     color: #ffc57a;
 }
 
+.record-board {
+    width: 88%;
+    margin: 0 auto 12px auto;
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: #8ec3cf;
+    line-height: 1.4;
+}
+
 canvas {
     background-color: #0a0a14;
     border: 2px solid #333;
@@ -259,14 +269,27 @@ canvas {
 
 /* Response for smaller screens */
 @media (max-width: 900px) {
+    body {
+        padding: 0;
+        min-height: 100dvh;
+        overflow: hidden;
+        align-items: stretch;
+    }
+
     .game-container {
-        padding: 10px;
-        border-width: 2px;
-        width: 100%;
+        padding: calc(10px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom));
+        border-width: 0;
+        width: 100vw;
+        min-height: 100dvh;
+        border-radius: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
     }
     canvas {
         width: 100%;
         height: auto;
+        max-height: 48dvh;
     }
     .game-title {
         font-size: 20px;
@@ -285,6 +308,11 @@ canvas {
     .phase-board {
         width: 100%;
         font-size: 8px;
+    }
+    .record-board {
+        width: 100%;
+        font-size: 7px;
+        margin-bottom: 10px;
     }
     .character-select {
         width: 100%;
@@ -342,8 +370,19 @@ canvas {
     .phase-board {
         font-size: 7px;
     }
+    .record-board {
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+    }
     .game-meta {
         flex-direction: column;
         gap: 3px;
+    }
+}
+
+@media (max-width: 900px) {
+    body {
+        padding: 0;
     }
 }
