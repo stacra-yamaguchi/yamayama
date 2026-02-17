@@ -63,7 +63,16 @@ const piecesShapes = {
 };
 
 function createPiece(type) {
-    return piecesShapes[type];
+    return piecesShapes[type].map(row => [...row]);
+}
+
+function paintPiece(matrix, colorIndex) {
+    matrix.forEach((row, y) => {
+        row.forEach((val, x) => {
+            if (val) matrix[y][x] = colorIndex;
+        });
+    });
+    return matrix;
 }
 
 function drawBlock(x, y, color, ctx = context) {
@@ -197,10 +206,8 @@ function playerReset() {
     if (nextPiece.type === null) {
          const piecesStr = 'TJLOSZI';
          nextPiece.type = piecesStr[piecesStr.length * Math.random() | 0];
-         nextPiece.matrix = createPiece(nextPiece.type);
-         // Assign color index based on type
          const colorIndex = piecesStr.indexOf(nextPiece.type) + 1;
-         nextPiece.matrix.forEach((row, y) => row.forEach((val, x) => { if(val) nextPiece.matrix[y][x] = colorIndex; }));
+         nextPiece.matrix = paintPiece(createPiece(nextPiece.type), colorIndex);
     }
 
     player.matrix = nextPiece.matrix;
@@ -211,8 +218,7 @@ function playerReset() {
     const type = piecesStr[piecesStr.length * Math.random() | 0];
     const matrix = createPiece(type);
     const colorIndex = piecesStr.indexOf(type) + 1;
-    // Apply color to the matrix
-    matrix.forEach((row, y) => row.forEach((val, x) => { if(val) matrix[y][x] = colorIndex; }));
+    paintPiece(matrix, colorIndex);
     
     nextPiece.type = type;
     nextPiece.matrix = matrix;
@@ -261,7 +267,14 @@ function collide(arena, player) {
 function getCompletedRows() {
     const rows = [];
     for (let y = arena.length - 1; y >= 0; --y) {
-        if (arena[y].every(value => value !== 0)) {
+        let isComplete = true;
+        for (let x = 0; x < arena[y].length; x++) {
+            if (arena[y][x] === 0) {
+                isComplete = false;
+                break;
+            }
+        }
+        if (isComplete) {
             rows.push(y);
         }
     }
@@ -285,6 +298,14 @@ function startLineClearAnimation(rows) {
     dropCounter = 0;
 }
 
+function tryStartLineClearAnimation() {
+    if (isLineClearAnimating) return true;
+    const completedRows = getCompletedRows();
+    if (completedRows.length === 0) return false;
+    startLineClearAnimation(completedRows);
+    return true;
+}
+
 function finalizeLineClear() {
     const sortedRows = [...clearingRows].sort((a, b) => b - a);
     sortedRows.forEach((y) => {
@@ -304,10 +325,7 @@ function finalizeLineClear() {
 
 function lockPiece() {
     merge(arena, player);
-    const completedRows = getCompletedRows();
-
-    if (completedRows.length > 0) {
-        startLineClearAnimation(completedRows);
+    if (tryStartLineClearAnimation()) {
         return;
     }
 
@@ -376,6 +394,13 @@ function update(time = 0) {
         if (lineClearElapsed >= lineClearDuration) {
             finalizeLineClear();
         }
+        draw();
+        requestAnimationFrame(update);
+        return;
+    }
+
+    // Safety net: if a full row remains for any reason, clear it immediately.
+    if (tryStartLineClearAnimation()) {
         draw();
         requestAnimationFrame(update);
         return;

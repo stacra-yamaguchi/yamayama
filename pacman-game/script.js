@@ -86,6 +86,43 @@ let touchStartX = 0;
 let touchStartY = 0;
 let touchActive = false;
 const swipeThreshold = 14;
+const ghostChaseRange = TILE_SIZE * 6;
+const ghostChaseSpeedMultiplier = 1.15;
+
+const captureAnimation = {
+    active: false,
+    frame: 0,
+    totalFrames: 42,
+    ghostColor: '#ff0000'
+};
+
+function isCaptureAnimating() {
+    return captureAnimation.active;
+}
+
+function startCaptureAnimation(ghostColor) {
+    captureAnimation.active = true;
+    captureAnimation.frame = 0;
+    captureAnimation.ghostColor = ghostColor || '#ff0000';
+    createParticles(pacman.x, pacman.y, '#ffff00');
+    createParticles(pacman.x, pacman.y, captureAnimation.ghostColor);
+    createFloatingText(pacman.x, pacman.y - 12, 'CAUGHT!');
+}
+
+function updateCaptureAnimation() {
+    if (!captureAnimation.active) return;
+    captureAnimation.frame++;
+    if (captureAnimation.frame % 8 === 0) {
+        createParticles(pacman.x, pacman.y, captureAnimation.ghostColor);
+    }
+    if (captureAnimation.frame >= captureAnimation.totalFrames) {
+        captureAnimation.active = false;
+        lives--;
+        updateLivesUI();
+        if (lives <= 0) gameOver();
+        else resetPositions();
+    }
+}
 
 function getSwipeDirection(dx, dy, threshold) {
     const absDx = Math.abs(dx);
@@ -96,7 +133,7 @@ function getSwipeDirection(dx, dy, threshold) {
 }
 
 document.addEventListener('keydown', (e) => {
-    if(!gameRunning) return;
+    if(!gameRunning || isCaptureAnimating()) return;
     if (e.key === 'ArrowRight' || e.key === 'd') pacman.nextDirection = 0;
     if (e.key === 'ArrowDown' || e.key === 's') pacman.nextDirection = 1;
     if (e.key === 'ArrowLeft' || e.key === 'a') pacman.nextDirection = 2;
@@ -104,7 +141,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 function handleTouchStart(e) {
-    if (!gameRunning || e.touches.length === 0) return;
+    if (!gameRunning || isCaptureAnimating() || e.touches.length === 0) return;
     const touch = e.touches[0];
     touchStartX = touch.clientX;
     touchStartY = touch.clientY;
@@ -113,7 +150,7 @@ function handleTouchStart(e) {
 }
 
 function handleTouchMove(e) {
-    if (!gameRunning || !touchActive || e.touches.length === 0) return;
+    if (!gameRunning || isCaptureAnimating() || !touchActive || e.touches.length === 0) return;
     const touch = e.touches[0];
     const dx = touch.clientX - touchStartX;
     const dy = touch.clientY - touchStartY;
@@ -128,7 +165,7 @@ function handleTouchMove(e) {
 }
 
 function handleTouchEnd(e) {
-    if (!gameRunning) return;
+    if (!gameRunning || isCaptureAnimating()) return;
 
     if (e.changedTouches.length > 0) {
         const touch = e.changedTouches[0];
@@ -183,6 +220,8 @@ function initGame() {
     gameOverEl.style.display = 'none';
     gameWinEl.style.display = 'none';
     gameRunning = true;
+    captureAnimation.active = false;
+    captureAnimation.frame = 0;
     fruit.active = false;
     fruit.timer = 0;
     particles = [];
@@ -202,23 +241,25 @@ function resetPositions() {
         // status: 'in_house', 'exiting', 'active'
         // 'target' is used for 'active' and 'exiting' state movement
         ghosts = [
-            { x: 6.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'red',    spawnX: 6.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 0,   speed: ghostSpeed, status: 'active',   target: {x: 6.5 * TILE_SIZE, y: exitY}, dir: 3 }, // spawn immediately targets exit
-            { x: 5.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'pink',   spawnX: 5.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 60,  speed: ghostSpeed, status: 'in_house', target: null, dir: 1 },
-            { x: 7.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'cyan',   spawnX: 7.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 120, speed: ghostSpeed, status: 'in_house', target: null, dir: 1 },
-            { x: 6.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'orange', spawnX: 6.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 180, speed: ghostSpeed, status: 'in_house', target: null, dir: 1 }
+            { x: 6.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'red',    spawnX: 6.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 0,   speed: ghostSpeed, baseSpeed: ghostSpeed, status: 'active',   target: {x: 6.5 * TILE_SIZE, y: exitY}, dir: 3, isChasing: false }, // spawn immediately targets exit
+            { x: 5.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'pink',   spawnX: 5.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 60,  speed: ghostSpeed, baseSpeed: ghostSpeed, status: 'in_house', target: null, dir: 1, isChasing: false },
+            { x: 7.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'cyan',   spawnX: 7.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 120, speed: ghostSpeed, baseSpeed: ghostSpeed, status: 'in_house', target: null, dir: 1, isChasing: false },
+            { x: 6.5 * TILE_SIZE, y: 11 * TILE_SIZE, color: 'orange', spawnX: 6.5 * TILE_SIZE, spawnY: 11 * TILE_SIZE, wait: 180, speed: ghostSpeed, baseSpeed: ghostSpeed, status: 'in_house', target: null, dir: 1, isChasing: false }
         ];
     } else {
         pacman.x = 13.5 * TILE_SIZE; pacman.y = 10.5 * TILE_SIZE;
         const exitY = 4.5 * TILE_SIZE;
         ghosts = [
-            { x: 13.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'red',    spawnX: 13.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 0,   speed: ghostSpeed, status: 'active',   target: {x: 13.5 * TILE_SIZE, y: exitY}, dir: 3 },
-            { x: 12.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'pink',   spawnX: 12.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 60,  speed: ghostSpeed, status: 'in_house', target: null, dir: 1 },
-            { x: 14.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'cyan',   spawnX: 14.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 120, speed: ghostSpeed, status: 'in_house', target: null, dir: 1 },
-            { x: 13.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'orange', spawnX: 13.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 180, speed: ghostSpeed, status: 'in_house', target: null, dir: 1 }
+            { x: 13.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'red',    spawnX: 13.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 0,   speed: ghostSpeed, baseSpeed: ghostSpeed, status: 'active',   target: {x: 13.5 * TILE_SIZE, y: exitY}, dir: 3, isChasing: false },
+            { x: 12.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'pink',   spawnX: 12.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 60,  speed: ghostSpeed, baseSpeed: ghostSpeed, status: 'in_house', target: null, dir: 1, isChasing: false },
+            { x: 14.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'cyan',   spawnX: 14.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 120, speed: ghostSpeed, baseSpeed: ghostSpeed, status: 'in_house', target: null, dir: 1, isChasing: false },
+            { x: 13.5 * TILE_SIZE, y: 7 * TILE_SIZE, color: 'orange', spawnX: 13.5 * TILE_SIZE, spawnY: 7 * TILE_SIZE, wait: 180, speed: ghostSpeed, baseSpeed: ghostSpeed, status: 'in_house', target: null, dir: 1, isChasing: false }
         ];
     }
     pacman.direction = 0; pacman.nextDirection = 0;
     superModeTimer = 0;
+    captureAnimation.active = false;
+    captureAnimation.frame = 0;
 }
 
 function updateLivesUI() {
@@ -288,7 +329,6 @@ function createFloatingText(x, y, text) {
 
 function update() {
     if (!gameRunning) return;
-    if (superModeTimer > 0) superModeTimer--;
 
     // Particles & Floating Text Logic
     for(let i=particles.length-1; i>=0; i--) {
@@ -299,6 +339,15 @@ function update() {
         floatingTexts[i].y += floatingTexts[i].dy;
         floatingTexts[i].life--; if(floatingTexts[i].life <= 0) floatingTexts.splice(i, 1);
     }
+
+    if (isCaptureAnimating()) {
+        updateCaptureAnimation();
+        draw();
+        animationId = requestAnimationFrame(update);
+        return;
+    }
+
+    if (superModeTimer > 0) superModeTimer--;
 
     // Fruit Logic
     if (!fruit.active) {
@@ -365,8 +414,13 @@ function update() {
     if(pelletsRemaining <= 0) gameWin();
 
     // Ghosts Movement (Target Tile Logic)
+    let playerCaught = false;
     ghosts.forEach(ghost => {
+        if (playerCaught) return;
+
         if (ghost.status === 'in_house') {
+            ghost.isChasing = false;
+            ghost.speed = ghost.baseSpeed;
             if (ghost.wait > 0) ghost.wait--;
             else {
                 ghost.status = 'exiting';
@@ -377,6 +431,14 @@ function update() {
             }
             return;
         }
+
+        const distanceToPacman = Math.hypot(pacman.x - ghost.x, pacman.y - ghost.y);
+        ghost.isChasing = (
+            superModeTimer === 0 &&
+            ghost.status === 'active' &&
+            distanceToPacman <= ghostChaseRange
+        );
+        ghost.speed = ghost.baseSpeed * (ghost.isChasing ? ghostChaseSpeedMultiplier : 1);
 
         // Move towards target
         if (ghost.target) {
@@ -431,8 +493,26 @@ function update() {
                 if (validMoves.length === 0) validMoves = possibleDirs; // Forced reverse (dead end)
 
                 if (validMoves.length > 0) {
-                    // Pick random for now (basic AI)
-                    const choice = validMoves[Math.floor(Math.random() * validMoves.length)];
+                    let choice;
+                    if (ghost.isChasing) {
+                        let bestDistance = Infinity;
+                        const chaseMoves = [];
+                        validMoves.forEach(move => {
+                            const targetX = (gx + move.dx) * TILE_SIZE + TILE_SIZE / 2;
+                            const targetY = (gy + move.dy) * TILE_SIZE + TILE_SIZE / 2;
+                            const chaseDistance = Math.hypot(pacman.x - targetX, pacman.y - targetY);
+                            if (chaseDistance < bestDistance - 0.01) {
+                                bestDistance = chaseDistance;
+                                chaseMoves.length = 0;
+                                chaseMoves.push(move);
+                            } else if (Math.abs(chaseDistance - bestDistance) < 0.01) {
+                                chaseMoves.push(move);
+                            }
+                        });
+                        choice = chaseMoves[Math.floor(Math.random() * chaseMoves.length)];
+                    } else {
+                        choice = validMoves[Math.floor(Math.random() * validMoves.length)];
+                    }
                     ghost.dir = choice.dir;
                     ghost.target = {
                         x: (gx + choice.dx) * TILE_SIZE + TILE_SIZE/2,
@@ -459,12 +539,14 @@ function update() {
                  ghost.status = 'in_house';
                  ghost.x = ghost.spawnX; ghost.y = ghost.spawnY; ghost.wait = 120;
                  ghost.target = null;
+                 ghost.isChasing = false;
+                 ghost.speed = ghost.baseSpeed;
                  score += 200; scoreEl.innerText = score;
                  createParticles(pacman.x, pacman.y, ghost.color);
                  createFloatingText(pacman.x, pacman.y, "200");
              } else { 
-                 lives--; updateLivesUI(); 
-                 if (lives <= 0) gameOver(); else resetPositions(); 
+                 playerCaught = true;
+                 startCaptureAnimation(ghost.color);
              }
         }
     });
@@ -495,6 +577,44 @@ function drawFruit(x, y) {
         ctx.fillStyle = '#228b22';
         ctx.beginPath(); ctx.arc(x, y - 8, 4, 0, Math.PI, true); ctx.fill();
     }
+}
+
+function drawPacmanBody() {
+    ctx.fillStyle = superModeTimer > 0 ? (superModeTimer % 20 < 10 ? '#fff' : '#ffff00') : '#ffff00';
+    ctx.save();
+    const mouthAngle = pacman.mouthOpen * Math.PI;
+    const rotation = [0, Math.PI / 2, Math.PI, -Math.PI / 2][pacman.direction];
+    ctx.translate(pacman.x, pacman.y);
+    ctx.rotate(rotation);
+    ctx.beginPath();
+    ctx.arc(0, 0, pacman.radius, mouthAngle, 2 * Math.PI - mouthAngle);
+    ctx.lineTo(0, 0);
+    ctx.fill();
+    ctx.restore();
+}
+
+function drawPacmanCaptureAnimation() {
+    const progress = Math.min(1, captureAnimation.frame / captureAnimation.totalFrames);
+    const collapse = Math.max(0.08, 1 - progress);
+    const mouthAngle = Math.min(Math.PI * 0.98, 0.08 + progress * Math.PI);
+    const ringRadius = pacman.radius + progress * 20;
+
+    ctx.save();
+    const rotation = [0, Math.PI / 2, Math.PI, -Math.PI / 2][pacman.direction];
+    ctx.translate(pacman.x, pacman.y);
+    ctx.rotate(rotation);
+    ctx.fillStyle = `rgba(255, ${Math.floor(255 - progress * 140)}, 0, ${Math.max(0.1, 1 - progress * 0.5)})`;
+    ctx.beginPath();
+    ctx.arc(0, 0, pacman.radius * collapse, mouthAngle, 2 * Math.PI - mouthAngle);
+    ctx.lineTo(0, 0);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.strokeStyle = `rgba(255, 255, 0, ${Math.max(0, 1 - progress)})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(pacman.x, pacman.y, ringRadius, 0, Math.PI * 2);
+    ctx.stroke();
 }
 
 function draw() {
@@ -529,19 +649,24 @@ function draw() {
     });
 
     // Pacman
-    ctx.fillStyle = superModeTimer > 0 ? (superModeTimer % 20 < 10 ? '#fff' : '#ffff00') : '#ffff00';
-    ctx.beginPath();
-    const mouthAngle = pacman.mouthOpen * Math.PI;
-    const rotation = [0, Math.PI/2, Math.PI, -Math.PI/2][pacman.direction];
-    ctx.translate(pacman.x, pacman.y); ctx.rotate(rotation);
-    ctx.arc(0, 0, pacman.radius, mouthAngle, 2 * Math.PI - mouthAngle); ctx.lineTo(0, 0); ctx.fill();
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    if (isCaptureAnimating()) {
+        drawPacmanCaptureAnimation();
+    } else {
+        drawPacmanBody();
+    }
 
     // Ghosts
     ghosts.forEach(ghost => {
         if (ghost.wait > 0 && ghost.status === 'in_house') return;
         ctx.fillStyle = superModeTimer > 0 ? (superModeTimer < 120 && superModeTimer % 20 < 10 ? '#fff' : '#0000ff') : ghost.color;
         ctx.beginPath(); ctx.arc(ghost.x, ghost.y, 12, Math.PI, 0); ctx.lineTo(ghost.x + 12, ghost.y + 12); ctx.lineTo(ghost.x - 12, ghost.y + 12); ctx.fill();
+        if (ghost.isChasing && superModeTimer === 0) {
+            ctx.strokeStyle = '#ffcc00';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(ghost.x, ghost.y, 13.5, 0, Math.PI * 2);
+            ctx.stroke();
+        }
         ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ghost.x - 4, ghost.y - 2, 4, 0, Math.PI*2); ctx.arc(ghost.x + 4, ghost.y - 2, 4, 0, Math.PI*2); ctx.fill();
         ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(ghost.x - 4, ghost.y - 2, 1.5, 0, Math.PI*2); ctx.arc(ghost.x + 4, ghost.y - 2, 1.5, 0, Math.PI*2); ctx.fill();
     });
