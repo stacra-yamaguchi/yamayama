@@ -364,6 +364,8 @@ let touchStartTime = 0;
 const swipeThreshold = 20;
 const tapThreshold = 12;
 const tapMaxDuration = 220;
+const horizontalStepPixels = 28;
+const maxHorizontalMovesPerSwipe = 6;
 
 function onTouchStart(event) {
     if (isGameOver || event.touches.length === 0) return;
@@ -390,7 +392,14 @@ function onTouchEnd(event) {
     }
 
     if (absDx >= absDy && absDx > swipeThreshold) {
-        playerMove(dx > 0 ? 1 : -1);
+        const direction = dx > 0 ? 1 : -1;
+        const moves = Math.min(
+            maxHorizontalMovesPerSwipe,
+            Math.max(1, Math.floor(absDx / horizontalStepPixels))
+        );
+        for (let i = 0; i < moves; i++) {
+            playerMove(direction);
+        }
         event.preventDefault();
         return;
     }
