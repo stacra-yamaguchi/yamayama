@@ -37,6 +37,7 @@ body::before {
     position: relative;
     border: 4px solid #00f3ff;
     padding: clamp(10px, 2vh, 20px);
+    padding-top: clamp(32px, 6vh, 46px);
     width: min(960px, 100%);
     box-shadow: 0 0 20px #00f3ff, inset 0 0 20px rgba(0, 243, 255, 0.2);
     background: rgba(0, 20, 25, 0.8);
@@ -243,28 +244,36 @@ canvas {
 }
 
 .game-meta {
-    margin-top: 10px;
+    position: absolute;
+    top: max(8px, env(safe-area-inset-top));
+    right: max(10px, env(safe-area-inset-right));
     display: flex;
-    justify-content: center;
-    gap: 12px;
-    font-size: 10px;
-    color: #7eb0bb;
-    line-height: 1.4;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    font-size: 8px;
+    color: rgba(161, 204, 214, 0.78);
+    line-height: 1.35;
+    text-align: right;
+    z-index: 12;
 }
 
 .back-link {
-    display: inline-block;
-    margin-top: 20px;
-    color: #888;
+    position: absolute;
+    top: max(8px, env(safe-area-inset-top));
+    left: max(10px, env(safe-area-inset-left));
+    color: rgba(184, 215, 220, 0.82);
     text-decoration: none;
-    font-size: 12px;
-    transition: all 0.3s;
+    font-size: 8px;
+    letter-spacing: 0.02em;
+    transition: color 0.3s, opacity 0.3s;
+    z-index: 12;
 }
 
 .back-link:hover {
     color: #00f3ff;
     text-shadow: 0 0 8px #00f3ff;
-    transform: scale(1.05);
+    opacity: 1;
 }
 
 /* Response for smaller screens */
@@ -277,7 +286,7 @@ canvas {
     }
 
     .game-container {
-        padding: calc(10px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom));
+        padding: calc(30px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom));
         border-width: 0;
         width: 100vw;
         min-height: 100dvh;
@@ -347,13 +356,10 @@ canvas {
         font-size: 9px;
     }
     .game-meta {
-        margin-top: 8px;
-        font-size: 8px;
-        gap: 6px;
+        font-size: 7px;
     }
     .back-link {
-        margin-top: 10px;
-        font-size: 10px;
+        font-size: 7px;
     }
 }
 
@@ -376,8 +382,7 @@ canvas {
         gap: 3px;
     }
     .game-meta {
-        flex-direction: column;
-        gap: 3px;
+        gap: 1px;
     }
 }
 

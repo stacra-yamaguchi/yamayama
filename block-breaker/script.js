@@ -41,7 +41,7 @@ const CONFIG = {
         durationMs: 10000,
         types: ["slow", "split", "pierce"]
     },
-    maxBalls: 6,
+    maxBalls: 16,
     slowFactor: 0.62,
     startLives: 3
 };
@@ -49,6 +49,9 @@ const CONFIG = {
 let gameState;
 let inputState;
 let lastTime = 0;
+const TOUCH_DEVICE = window.matchMedia("(pointer: coarse)").matches
+    || "ontouchstart" in window
+    || navigator.maxTouchPoints > 0;
 
 function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -70,6 +73,15 @@ function getPaddleSpeed() {
     return clamp(canvas.width * 0.012, CONFIG.paddle.speed, 18);
 }
 
+function getPaddleY() {
+    if (!TOUCH_DEVICE) {
+        return canvas.height - 42;
+    }
+
+    const touchGap = clamp(canvas.height * 0.14, 92, 140);
+    return canvas.height - touchGap;
+}
+
 function resizeCanvas() {
     const prevWidth = canvas.width || 1;
     const prevHeight = canvas.height || 1;
@@ -88,7 +100,7 @@ function resizeCanvas() {
     gameState.paddle.width = paddleWidth;
     gameState.paddle.speed = getPaddleSpeed();
     gameState.paddle.x = clamp(gameState.paddle.x * scaleX, 0, canvas.width - paddleWidth);
-    gameState.paddle.y = canvas.height - 42;
+    gameState.paddle.y = getPaddleY();
 
     gameState.balls.forEach((ball) => {
         ball.x = clamp(ball.x * scaleX, ball.radius, canvas.width - ball.radius);
@@ -182,7 +194,7 @@ function startNewGame() {
         lives: CONFIG.startLives,
         paddle: {
             x: canvas.width / 2 - paddleWidth / 2,
-            y: canvas.height - 42,
+            y: getPaddleY(),
             width: paddleWidth,
             height: CONFIG.paddle.height,
             speed: getPaddleSpeed(),
@@ -210,7 +222,7 @@ function startNextStage() {
     gameState.paddle.width = getPaddleWidth();
     gameState.paddle.speed = getPaddleSpeed();
     gameState.paddle.x = canvas.width / 2 - gameState.paddle.width / 2;
-    gameState.paddle.y = canvas.height - 42;
+    gameState.paddle.y = getPaddleY();
     gameState.balls = [createBall(canvas.width / 2, canvas.height - 70, CONFIG.ball.speed)];
     gameState.slowUntil = 0;
     gameState.pierceUntil = 0;
@@ -296,45 +308,34 @@ function applySlowItem(now) {
 
 function applySplitItem() {
     gameState.splitActive = true;
+    const sourceBalls = [...gameState.balls];
+    const cloneBalls = [];
 
-    const nextBalls = [...gameState.balls];
-
-    gameState.balls.forEach((baseBall) => {
-        if (nextBalls.length >= CONFIG.maxBalls) {
+    sourceBalls.forEach((baseBall) => {
+        if (sourceBalls.length + cloneBalls.length >= CONFIG.maxBalls) {
             return;
         }
 
-        const variation = randomRange(-0.22, 0.22);
         const baseSpeed = Math.hypot(baseBall.vx, baseBall.vy);
+        const variation = randomRange(-0.18, 0.18);
+        const mirrored = normalize(
+            -(baseBall.vx || (Math.random() < 0.5 ? -1 : 1)),
+            baseBall.vy + variation * baseSpeed,
+            baseSpeed
+        );
 
-        const splitA = normalize(baseBall.vx, baseBall.vy + variation * baseSpeed, baseSpeed);
-        nextBalls.push({
-            x: baseBall.x,
-            y: baseBall.y,
-            vx: splitA.vx,
-            vy: -Math.abs(splitA.vy),
-            radius: baseBall.radius,
-            temporary: true,
-            expiresAt: null
-        });
-
-        if (nextBalls.length >= CONFIG.maxBalls) {
-            return;
-        }
-
-        const splitB = normalize(-baseBall.vx, baseBall.vy - variation * baseSpeed, baseSpeed);
-        nextBalls.push({
-            x: baseBall.x,
-            y: baseBall.y,
-            vx: splitB.vx,
-            vy: -Math.abs(splitB.vy),
+        cloneBalls.push({
+            x: baseBall.x + randomRange(-6, 6),
+            y: baseBall.y + randomRange(-4, 4),
+            vx: mirrored.vx,
+            vy: mirrored.vy,
             radius: baseBall.radius,
             temporary: true,
             expiresAt: null
         });
     });
 
-    gameState.balls = nextBalls.slice(0, CONFIG.maxBalls).map((ball, index) => {
+    gameState.balls = [...sourceBalls, ...cloneBalls].slice(0, CONFIG.maxBalls).map((ball, index) => {
         if (index === 0) {
             return { ...ball, temporary: false, expiresAt: null };
         }
@@ -508,7 +509,7 @@ function updateBalls(now) {
         gameState.paddle.width = getPaddleWidth();
         gameState.paddle.speed = getPaddleSpeed();
         gameState.paddle.x = canvas.width / 2 - gameState.paddle.width / 2;
-        gameState.paddle.y = canvas.height - 42;
+        gameState.paddle.y = getPaddleY();
     }
 }
 
@@ -526,6 +527,23 @@ function drawBackground() {
         ctx.moveTo(0, y);
         ctx.lineTo(canvas.width, y);
         ctx.stroke();
+    }
+
+    if (TOUCH_DEVICE) {
+        const zoneTop = gameState.paddle.y + gameState.paddle.height + 8;
+        if (zoneTop < canvas.height) {
+            const zoneGradient = ctx.createLinearGradient(0, zoneTop, 0, canvas.height);
+            zoneGradient.addColorStop(0, "rgba(78, 145, 255, 0.04)");
+            zoneGradient.addColorStop(1, "rgba(78, 145, 255, 0.20)");
+            ctx.fillStyle = zoneGradient;
+            ctx.fillRect(0, zoneTop, canvas.width, canvas.height - zoneTop);
+
+            ctx.strokeStyle = "rgba(146, 201, 255, 0.28)";
+            ctx.beginPath();
+            ctx.moveTo(0, zoneTop);
+            ctx.lineTo(canvas.width, zoneTop);
+            ctx.stroke();
+        }
     }
 }
 
