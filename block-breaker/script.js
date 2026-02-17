@@ -8,6 +8,7 @@ const ui = {
     lives: document.getElementById("lives"),
     slowEffect: document.getElementById("slow-effect"),
     splitEffect: document.getElementById("split-effect"),
+    pierceEffect: document.getElementById("pierce-effect"),
     overlay: document.getElementById("overlay"),
     overlayMessage: document.getElementById("overlay-message"),
     restartBtn: document.getElementById("restart-btn")
@@ -38,7 +39,7 @@ const CONFIG = {
         size: 18,
         fallSpeed: 2.35,
         durationMs: 10000,
-        types: ["slow", "split"]
+        types: ["slow", "split", "pierce"]
     },
     maxBalls: 6,
     slowFactor: 0.62,
@@ -59,6 +60,52 @@ function randomRange(min, max) {
 
 function stageBlockCount(stage) {
     return CONFIG.stage.initialBlocks + (stage - 1) * CONFIG.stage.increasePerStage;
+}
+
+function getPaddleWidth() {
+    return clamp(canvas.width * 0.16, 140, 260);
+}
+
+function getPaddleSpeed() {
+    return clamp(canvas.width * 0.012, CONFIG.paddle.speed, 18);
+}
+
+function resizeCanvas() {
+    const prevWidth = canvas.width || 1;
+    const prevHeight = canvas.height || 1;
+
+    canvas.width = Math.max(320, Math.floor(window.innerWidth));
+    canvas.height = Math.max(420, Math.floor(window.innerHeight));
+
+    if (!gameState) {
+        return;
+    }
+
+    const scaleX = canvas.width / prevWidth;
+    const scaleY = canvas.height / prevHeight;
+    const paddleWidth = getPaddleWidth();
+
+    gameState.paddle.width = paddleWidth;
+    gameState.paddle.speed = getPaddleSpeed();
+    gameState.paddle.x = clamp(gameState.paddle.x * scaleX, 0, canvas.width - paddleWidth);
+    gameState.paddle.y = canvas.height - 42;
+
+    gameState.balls.forEach((ball) => {
+        ball.x = clamp(ball.x * scaleX, ball.radius, canvas.width - ball.radius);
+        ball.y = clamp(ball.y * scaleY, ball.radius, canvas.height - ball.radius);
+    });
+
+    gameState.blocks.forEach((block) => {
+        block.x *= scaleX;
+        block.y *= scaleY;
+        block.width *= scaleX;
+        block.height *= scaleY;
+    });
+
+    gameState.items.forEach((item) => {
+        item.x *= scaleX;
+        item.y *= scaleY;
+    });
 }
 
 function createBlockColor(row) {
@@ -127,25 +174,28 @@ function resetInput() {
 
 function startNewGame() {
     resetInput();
+    const paddleWidth = getPaddleWidth();
 
     gameState = {
         stage: 1,
         score: 0,
         lives: CONFIG.startLives,
         paddle: {
-            x: canvas.width / 2 - CONFIG.paddle.width / 2,
+            x: canvas.width / 2 - paddleWidth / 2,
             y: canvas.height - 42,
-            width: CONFIG.paddle.width,
+            width: paddleWidth,
             height: CONFIG.paddle.height,
+            speed: getPaddleSpeed(),
             vx: 0
         },
         balls: [createBall(canvas.width / 2, canvas.height - 70, CONFIG.ball.speed)],
         blocks: createBlocks(1),
         items: [],
         slowUntil: 0,
-        splitUntil: 0,
+        pierceUntil: 0,
         slowActive: false,
         splitActive: false,
+        pierceActive: false,
         running: true
     };
 
@@ -157,12 +207,16 @@ function startNextStage() {
     gameState.stage += 1;
     gameState.blocks = createBlocks(gameState.stage);
     gameState.items = [];
+    gameState.paddle.width = getPaddleWidth();
+    gameState.paddle.speed = getPaddleSpeed();
     gameState.paddle.x = canvas.width / 2 - gameState.paddle.width / 2;
+    gameState.paddle.y = canvas.height - 42;
     gameState.balls = [createBall(canvas.width / 2, canvas.height - 70, CONFIG.ball.speed)];
     gameState.slowUntil = 0;
-    gameState.splitUntil = 0;
+    gameState.pierceUntil = 0;
     gameState.slowActive = false;
     gameState.splitActive = false;
+    gameState.pierceActive = false;
     updateHud();
 }
 
@@ -192,24 +246,24 @@ function updateEffectBoard(now) {
         });
     }
 
-    if (gameState.splitActive && now >= gameState.splitUntil) {
-        gameState.splitActive = false;
-        const keepBall = gameState.balls[0] || createBall(canvas.width / 2, canvas.height - 70, CONFIG.ball.speed);
-        keepBall.temporary = false;
-        keepBall.expiresAt = null;
-        gameState.balls = [keepBall];
+    if (gameState.pierceActive && now >= gameState.pierceUntil) {
+        gameState.pierceActive = false;
     }
 
     const slowRemain = Math.max(0, gameState.slowUntil - now);
-    const splitRemain = Math.max(0, gameState.splitUntil - now);
+    const pierceRemain = Math.max(0, gameState.pierceUntil - now);
 
     ui.slowEffect.textContent = slowRemain > 0
         ? `SLOW: ${Math.ceil(slowRemain / 1000)}s`
         : "SLOW: OFF";
 
-    ui.splitEffect.textContent = splitRemain > 0
-        ? `SPLIT: ${Math.ceil(splitRemain / 1000)}s`
+    ui.splitEffect.textContent = gameState.splitActive
+        ? "SPLIT: ON"
         : "SPLIT: OFF";
+
+    ui.pierceEffect.textContent = pierceRemain > 0
+        ? `PIERCE: ${Math.ceil(pierceRemain / 1000)}s`
+        : "PIERCE: OFF";
 }
 
 function spawnItem(x, y) {
@@ -240,9 +294,8 @@ function applySlowItem(now) {
     gameState.slowUntil = now + CONFIG.item.durationMs;
 }
 
-function applySplitItem(now) {
+function applySplitItem() {
     gameState.splitActive = true;
-    gameState.splitUntil = now + CONFIG.item.durationMs;
 
     const nextBalls = [...gameState.balls];
 
@@ -262,7 +315,7 @@ function applySplitItem(now) {
             vy: -Math.abs(splitA.vy),
             radius: baseBall.radius,
             temporary: true,
-            expiresAt: gameState.splitUntil
+            expiresAt: null
         });
 
         if (nextBalls.length >= CONFIG.maxBalls) {
@@ -277,7 +330,7 @@ function applySplitItem(now) {
             vy: -Math.abs(splitB.vy),
             radius: baseBall.radius,
             temporary: true,
-            expiresAt: gameState.splitUntil
+            expiresAt: null
         });
     });
 
@@ -285,8 +338,13 @@ function applySplitItem(now) {
         if (index === 0) {
             return { ...ball, temporary: false, expiresAt: null };
         }
-        return { ...ball, temporary: true, expiresAt: gameState.splitUntil };
+        return { ...ball, temporary: true, expiresAt: null };
     });
+}
+
+function applyPierceItem(now) {
+    gameState.pierceActive = true;
+    gameState.pierceUntil = now + CONFIG.item.durationMs;
 }
 
 function updateItems(now) {
@@ -302,8 +360,10 @@ function updateItems(now) {
         ) {
             if (item.type === "slow") {
                 applySlowItem(now);
+            } else if (item.type === "split") {
+                applySplitItem();
             } else {
-                applySplitItem(now);
+                applyPierceItem(now);
             }
             gameState.items.splice(i, 1);
             continue;
@@ -319,11 +379,11 @@ function updatePaddle() {
     gameState.paddle.vx = 0;
 
     if (inputState.left) {
-        gameState.paddle.vx = -CONFIG.paddle.speed;
+        gameState.paddle.vx = -gameState.paddle.speed;
     }
 
     if (inputState.right) {
-        gameState.paddle.vx = CONFIG.paddle.speed;
+        gameState.paddle.vx = gameState.paddle.speed;
     }
 
     gameState.paddle.x += gameState.paddle.vx;
@@ -352,6 +412,8 @@ function handlePaddleCollision(ball) {
 }
 
 function handleBlockCollision(ball) {
+    let collided = false;
+
     for (let i = gameState.blocks.length - 1; i >= 0; i -= 1) {
         const block = gameState.blocks[i];
 
@@ -364,13 +426,17 @@ function handleBlockCollision(ball) {
             continue;
         }
 
-        const overlapX = ball.radius - Math.abs(dx);
-        const overlapY = ball.radius - Math.abs(dy);
+        collided = true;
 
-        if (overlapX < overlapY) {
-            ball.vx *= -1;
-        } else {
-            ball.vy *= -1;
+        if (!gameState.pierceActive) {
+            const overlapX = ball.radius - Math.abs(dx);
+            const overlapY = ball.radius - Math.abs(dy);
+
+            if (overlapX < overlapY) {
+                ball.vx *= -1;
+            } else {
+                ball.vy *= -1;
+            }
         }
 
         gameState.blocks.splice(i, 1);
@@ -382,8 +448,14 @@ function handleBlockCollision(ball) {
             return true;
         }
 
+        if (!gameState.pierceActive) {
+            updateHud();
+            return false;
+        }
+    }
+
+    if (collided) {
         updateHud();
-        return false;
     }
 
     return false;
@@ -417,11 +489,6 @@ function updateBalls(now) {
             return;
         }
 
-        if (ball.temporary && ball.expiresAt && now >= ball.expiresAt) {
-            gameState.balls.splice(i, 1);
-            continue;
-        }
-
         if (ball.y - ball.radius > canvas.height + 10) {
             gameState.balls.splice(i, 1);
         }
@@ -438,7 +505,10 @@ function updateBalls(now) {
         }
 
         gameState.balls = [createBall(canvas.width / 2, canvas.height - 70, CONFIG.ball.speed)];
+        gameState.paddle.width = getPaddleWidth();
+        gameState.paddle.speed = getPaddleSpeed();
         gameState.paddle.x = canvas.width / 2 - gameState.paddle.width / 2;
+        gameState.paddle.y = canvas.height - 42;
     }
 }
 
@@ -470,10 +540,13 @@ function drawPaddle() {
 
 function drawBalls() {
     gameState.balls.forEach((ball) => {
+        const isPiercing = gameState.pierceActive;
         ctx.save();
-        ctx.shadowColor = ball.temporary ? "rgba(159, 255, 160, 0.9)" : "rgba(220, 247, 255, 0.92)";
-        ctx.shadowBlur = ball.temporary ? 16 : 12;
-        ctx.fillStyle = ball.temporary ? "#9eff7f" : "#ffffff";
+        ctx.shadowColor = isPiercing
+            ? "rgba(255, 178, 102, 0.92)"
+            : (ball.temporary ? "rgba(159, 255, 160, 0.9)" : "rgba(220, 247, 255, 0.92)");
+        ctx.shadowBlur = isPiercing ? 18 : (ball.temporary ? 16 : 12);
+        ctx.fillStyle = isPiercing ? "#ffb266" : (ball.temporary ? "#9eff7f" : "#ffffff");
         ctx.beginPath();
         ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
         ctx.fill();
@@ -497,12 +570,17 @@ function drawBlocks() {
 
 function drawItems() {
     gameState.items.forEach((item) => {
-        const isSlow = item.type === "slow";
+        const config = {
+            slow: { color: "#71d6ff", glow: "rgba(125, 217, 255, 0.92)", label: "S" },
+            split: { color: "#a8ff65", glow: "rgba(184, 255, 122, 0.92)", label: "X" },
+            pierce: { color: "#ffb266", glow: "rgba(255, 178, 102, 0.92)", label: "P" }
+        }[item.type];
+
         ctx.save();
         ctx.translate(item.x, item.y);
-        ctx.shadowColor = isSlow ? "rgba(125, 217, 255, 0.92)" : "rgba(184, 255, 122, 0.92)";
+        ctx.shadowColor = config.glow;
         ctx.shadowBlur = 16;
-        ctx.fillStyle = isSlow ? "#71d6ff" : "#a8ff65";
+        ctx.fillStyle = config.color;
         ctx.beginPath();
         ctx.arc(0, 0, item.size, 0, Math.PI * 2);
         ctx.fill();
@@ -511,7 +589,7 @@ function drawItems() {
         ctx.font = "11px 'Press Start 2P', cursive";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(isSlow ? "S" : "X", 0, 1);
+        ctx.fillText(config.label, 0, 1);
         ctx.restore();
     });
 }
@@ -594,6 +672,11 @@ ui.restartBtn.addEventListener("click", () => {
     startNewGame();
 });
 
+window.addEventListener("resize", () => {
+    resizeCanvas();
+});
+
+resizeCanvas();
 resetInput();
 startNewGame();
 render();

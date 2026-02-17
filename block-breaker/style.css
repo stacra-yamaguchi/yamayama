@@ -1,63 +1,81 @@
 :root {
     --bg-top: #071325;
     --bg-bottom: #030913;
-    --line: #184778;
     --text: #d9ecff;
-    --accent: #61d1ff;
-    --accent-2: #9eff7f;
-    --danger: #ff7c94;
 }
 
 * {
     box-sizing: border-box;
 }
 
+html,
 body {
+    width: 100%;
+    height: 100%;
     margin: 0;
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    overflow: hidden;
+}
+
+body {
     color: var(--text);
     font-family: "Orbitron", "Noto Sans JP", sans-serif;
     background:
         radial-gradient(circle at 18% 15%, rgba(72, 161, 255, 0.34), transparent 36%),
         radial-gradient(circle at 82% 78%, rgba(40, 84, 255, 0.24), transparent 34%),
         linear-gradient(160deg, var(--bg-top), var(--bg-bottom));
-    padding: 18px;
 }
 
 .game-container {
-    width: min(980px, 100%);
-    background: rgba(4, 14, 28, 0.82);
-    border: 1px solid rgba(119, 180, 255, 0.28);
-    border-radius: 20px;
-    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
-    padding: 20px;
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+
+.canvas-wrapper {
+    position: absolute;
+    inset: 0;
+}
+
+canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    background: linear-gradient(180deg, rgba(5, 16, 33, 0.98), rgba(6, 10, 19, 0.98));
+}
+
+.top-ui {
+    position: absolute;
+    top: max(10px, env(safe-area-inset-top));
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(980px, calc(100% - 28px));
+    pointer-events: none;
+    z-index: 12;
 }
 
 .game-title {
-    margin: 4px 0 14px;
+    margin: 0 0 8px;
     text-align: center;
     font-family: "Press Start 2P", cursive;
-    font-size: clamp(1rem, 3vw, 1.65rem);
+    font-size: clamp(0.72rem, 1.5vw, 1.06rem);
     color: #85dcff;
-    text-shadow: 0 0 15px rgba(120, 220, 255, 0.75);
+    text-shadow: 0 0 14px rgba(120, 220, 255, 0.72);
 }
 
 .hud {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
+    gap: 6px;
 }
 
 .hud-card {
-    border: 1px solid rgba(110, 185, 255, 0.36);
+    border: 1px solid rgba(110, 185, 255, 0.42);
     border-radius: 10px;
-    padding: 8px 10px;
+    padding: 6px 8px;
     text-align: center;
-    font-size: 0.78rem;
-    background: rgba(9, 23, 43, 0.9);
+    font-size: 0.68rem;
+    background: rgba(7, 21, 40, 0.72);
+    backdrop-filter: blur(2px);
 }
 
 .hud-card span {
@@ -66,35 +84,21 @@ body {
 }
 
 .effect-board {
-    margin: 10px 0;
+    margin: 7px auto 0;
     display: flex;
-    gap: 10px;
+    gap: 8px;
     justify-content: center;
     flex-wrap: wrap;
 }
 
 .effect-board div {
-    min-width: 180px;
-    border: 1px solid rgba(132, 193, 255, 0.36);
+    min-width: 145px;
+    border: 1px solid rgba(132, 193, 255, 0.4);
     border-radius: 999px;
-    padding: 6px 12px;
+    padding: 4px 10px;
     text-align: center;
-    font-size: 0.76rem;
-    background: rgba(10, 26, 46, 0.95);
-}
-
-.canvas-wrapper {
-    position: relative;
-    width: 100%;
-}
-
-canvas {
-    width: 100%;
-    max-width: 100%;
-    display: block;
-    border-radius: 14px;
-    border: 1px solid rgba(110, 183, 255, 0.45);
-    background: linear-gradient(180deg, rgba(5, 16, 33, 0.98), rgba(6, 10, 19, 0.98));
+    font-size: 0.64rem;
+    background: rgba(10, 26, 46, 0.74);
 }
 
 .overlay {
@@ -106,7 +110,7 @@ canvas {
     align-items: center;
     justify-content: center;
     background: rgba(1, 8, 16, 0.78);
-    border-radius: 14px;
+    z-index: 20;
 }
 
 .hidden {
@@ -127,58 +131,68 @@ canvas {
     background: linear-gradient(135deg, rgba(20, 90, 141, 0.92), rgba(43, 141, 175, 0.95));
     color: #fff;
     font-family: "Press Start 2P", cursive;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     padding: 10px 16px;
     border-radius: 999px;
     cursor: pointer;
 }
 
-.controls {
-    margin: 12px 0 2px;
-    text-align: center;
-    font-size: 0.75rem;
-    opacity: 0.86;
-    line-height: 1.65;
-}
-
-.game-meta {
-    margin-top: 10px;
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-    flex-wrap: wrap;
-    font-size: 0.7rem;
-    color: #b9d3ed;
-}
-
 .back-link {
-    display: inline-block;
-    margin-top: 14px;
+    position: absolute;
+    top: max(10px, env(safe-area-inset-top));
+    left: max(10px, env(safe-area-inset-left));
+    z-index: 30;
     text-decoration: none;
-    color: #8ecfff;
+    color: rgba(166, 217, 255, 0.9);
     font-family: "Press Start 2P", cursive;
-    font-size: 0.65rem;
+    font-size: 0.52rem;
+    letter-spacing: 0.02em;
+    opacity: 0.82;
 }
 
 .back-link:hover {
-    color: #d8f6ff;
+    opacity: 1;
+}
+
+.game-meta {
+    position: absolute;
+    right: max(10px, env(safe-area-inset-right));
+    bottom: max(10px, env(safe-area-inset-bottom));
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    font-size: 0.56rem;
+    line-height: 1.25;
+    color: rgba(185, 211, 237, 0.72);
+    text-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
 }
 
 @media (max-width: 760px) {
-    .game-container {
-        padding: 14px;
+    .game-title {
+        margin-bottom: 6px;
     }
 
     .hud {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .effect-board div {
-        min-width: 150px;
-        font-size: 0.7rem;
+    .hud-card {
+        font-size: 0.6rem;
+        padding: 5px 6px;
     }
 
-    .controls {
-        font-size: 0.68rem;
+    .effect-board div {
+        min-width: 120px;
+        font-size: 0.58rem;
+    }
+
+    .back-link {
+        font-size: 0.48rem;
+    }
+
+    .game-meta {
+        font-size: 0.5rem;
     }
 }

@@ -18,38 +18,35 @@
 
 <body>
     <div class="game-container">
-        <h1 class="game-title">NEON BREAKER</h1>
-
-        <div class="hud">
-            <div class="hud-card">STAGE <span id="stage">1</span></div>
-            <div class="hud-card">BLOCKS <span id="blocks-left">100</span></div>
-            <div class="hud-card">SCORE <span id="score">0</span></div>
-            <div class="hud-card">LIFE <span id="lives">3</span></div>
-        </div>
-
-        <div class="effect-board">
-            <div id="slow-effect">SLOW: OFF</div>
-            <div id="split-effect">SPLIT: OFF</div>
-        </div>
-
         <div class="canvas-wrapper">
             <canvas id="game" width="900" height="620"></canvas>
             <div id="overlay" class="overlay hidden">
                 <p id="overlay-message">READY?</p>
                 <button id="restart-btn" type="button">RESTART</button>
             </div>
+
+            <div class="top-ui">
+                <h1 class="game-title">NEON BREAKER</h1>
+                <div class="hud">
+                    <div class="hud-card">STAGE <span id="stage">1</span></div>
+                    <div class="hud-card">BLOCKS <span id="blocks-left">100</span></div>
+                    <div class="hud-card">SCORE <span id="score">0</span></div>
+                    <div class="hud-card">LIFE <span id="lives">3</span></div>
+                </div>
+                <div class="effect-board">
+                    <div id="slow-effect">SLOW: OFF</div>
+                    <div id="split-effect">SPLIT: OFF</div>
+                    <div id="pierce-effect">PIERCE: OFF</div>
+                </div>
+            </div>
+
+            <a href="../index.html" class="back-link">← Back to Game Center</a>
+
+            <div class="game-meta">
+                <span>Version 1.0.3</span>
+                <span>Last Updated: 2026-02-17 22:41 JST</span>
+            </div>
         </div>
-
-        <p class="controls">
-            左右キー / A,D / マウス / タッチで操作。ランダムアイテム: SLOW(10s), SPLIT(10s)
-        </p>
-
-        <div class="game-meta">
-            <span>Version 1.0.0</span>
-            <span>Last Updated: 2026-02-17 22:21 JST</span>
-        </div>
-
-        <a href="../index.html" class="back-link">← Back to Game Center</a>
     </div>
 
     <script src="script.js"></script>

@@ -333,17 +333,21 @@ canvas#tetris {
 
     .game-content {
         width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
 
     .game-board-container {
-        width: 100%;
-        max-width: 420px;
+        width: min(calc(100vw - 20px), calc(100dvh * 0.6));
+        max-width: none;
         margin: 0 auto;
     }
 
     canvas#tetris {
         width: 100%;
         height: auto;
-        max-height: 56dvh;
+        aspect-ratio: 3 / 5;
+        max-height: none;
     }
 }
