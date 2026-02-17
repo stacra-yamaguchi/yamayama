@@ -11,7 +11,7 @@
   - `space-pazzle/index.html`
 - 表示フォーマット:
   - `Version x.y.z`
-  - `Last Updated: YYYY-MM-DD`
+  - `Last Updated: YYYY-MM-DD HH:mm TZ`
 - 更新ルール:
-  - `Last Updated` は実際の修正日を設定する。
+  - `Last Updated` は実際の修正日時（タイムゾーン付き）を設定する。
   - `Version` は変更内容に応じて更新する（例: 修正 `PATCH`、機能追加 `MINOR`、大きな変更 `MAJOR`）。
