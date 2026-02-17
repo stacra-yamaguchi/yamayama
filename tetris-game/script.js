@@ -66,20 +66,44 @@ function createPiece(type) {
     return piecesShapes[type];
 }
 
+function drawBlock(x, y, color, ctx = context) {
+    ctx.fillStyle = color;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = color;
+    ctx.fillRect(x, y, 1, 1);
+
+    // Inner highlight for 3D effect
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.fillRect(x + 0.1, y + 0.1, 0.8, 0.8);
+}
+
+function drawArena() {
+    const flashingRows = new Set(clearingRows);
+    const showFlashingRows = !isLineClearAnimating ||
+        Math.floor(lineClearElapsed / lineClearBlinkInterval) % 2 === 0;
+
+    arena.forEach((row, y) => {
+        row.forEach((value, x) => {
+            if (value === 0) return;
+
+            if (flashingRows.has(y)) {
+                if (!showFlashingRows) return;
+                drawBlock(x, y, '#FFFFFF');
+                return;
+            }
+
+            drawBlock(x, y, colors[value]);
+        });
+    });
+}
+
 function drawMatrix(matrix, offset, ctx = context) {
+    if (!matrix) return;
     matrix.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0) {
-                // Neon glow effect for blocks
-                ctx.fillStyle = colors[value];
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = colors[value];
-                ctx.fillRect(x + offset.x, y + offset.y, 1, 1);
-                
-                // Inner highlight for 3D effect
-                ctx.shadowBlur = 0;
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-                ctx.fillRect(x + offset.x + 0.1, y + offset.y + 0.1, 0.8, 0.8);
+                drawBlock(x + offset.x, y + offset.y, colors[value], ctx);
             }
         });
     });
@@ -106,8 +130,10 @@ function draw() {
         context.stroke();
     }
 
-    drawMatrix(arena, {x: 0, y: 0});
-    drawMatrix(player.matrix, player.pos);
+    drawArena();
+    if (!isLineClearAnimating) {
+        drawMatrix(player.matrix, player.pos);
+    }
 }
 
 function drawNext() {
@@ -155,10 +181,7 @@ function playerDrop() {
     player.pos.y++;
     if (collide(arena, player)) {
         player.pos.y--;
-        merge(arena, player);
-        playerReset();
-        arenaSweep();
-        updateScore();
+        lockPiece();
     }
     dropCounter = 0;
 }
@@ -235,32 +258,60 @@ function collide(arena, player) {
     return false;
 }
 
-function arenaSweep() {
-    let rowCount = 0;
-    outer: for (let y = arena.length -1; y > 0; --y) {
-        for (let x = 0; x < arena[y].length; ++x) {
-            if (arena[y][x] === 0) {
-                continue outer;
-            }
+function getCompletedRows() {
+    const rows = [];
+    for (let y = arena.length - 1; y >= 0; --y) {
+        if (arena[y].every(value => value !== 0)) {
+            rows.push(y);
         }
+    }
+    return rows;
+}
 
+function applyLineClearScore(rowCount) {
+    if (rowCount <= 0) return;
+
+    const lineScores = [0, 40, 100, 300, 1200];
+    player.score += lineScores[rowCount] * (player.level + 1);
+    player.lines += rowCount;
+    player.level = Math.floor(player.lines / 10);
+    dropInterval = Math.max(100, 1000 - (player.level * 50));
+}
+
+function startLineClearAnimation(rows) {
+    isLineClearAnimating = true;
+    clearingRows = rows;
+    lineClearElapsed = 0;
+    dropCounter = 0;
+}
+
+function finalizeLineClear() {
+    const sortedRows = [...clearingRows].sort((a, b) => b - a);
+    sortedRows.forEach((y) => {
         const row = arena.splice(y, 1)[0].fill(0);
         arena.unshift(row);
-        ++y;
-        rowCount++;
+    });
+
+    applyLineClearScore(sortedRows.length);
+    updateScore();
+
+    isLineClearAnimating = false;
+    clearingRows = [];
+    lineClearElapsed = 0;
+    dropCounter = 0;
+    playerReset();
+}
+
+function lockPiece() {
+    merge(arena, player);
+    const completedRows = getCompletedRows();
+
+    if (completedRows.length > 0) {
+        startLineClearAnimation(completedRows);
+        return;
     }
 
-    if (rowCount > 0) {
-        // Scoring: 40, 100, 300, 1200 * level
-        const lineScores = [0, 40, 100, 300, 1200];
-        player.score += lineScores[rowCount] * (player.level + 1);
-        player.lines += rowCount;
-        // Level up every 10 lines
-        player.level = Math.floor(player.lines / 10);
-        
-        // Increase speed with level
-        dropInterval = Math.max(100, 1000 - (player.level * 50));
-    }
+    playerReset();
 }
 
 function updateScore() {
@@ -290,6 +341,12 @@ function restartGame() {
     dropInterval = 1000;
     updateScore();
     isGameOver = false;
+    isLineClearAnimating = false;
+    clearingRows = [];
+    lineClearElapsed = 0;
+    softDropUntil = 0;
+    dropCounter = 0;
+    lastTime = 0;
     modal.classList.add('hidden');
     playerReset();
     update();
@@ -299,6 +356,14 @@ let dropCounter = 0;
 let dropInterval = 1000;
 let lastTime = 0;
 let isGameOver = false;
+let softDropUntil = 0;
+const softDropDuration = 650;
+const softDropInterval = 140;
+let isLineClearAnimating = false;
+let clearingRows = [];
+let lineClearElapsed = 0;
+const lineClearDuration = 280;
+const lineClearBlinkInterval = 70;
 
 function update(time = 0) {
     if (isGameOver) return;
@@ -306,8 +371,22 @@ function update(time = 0) {
     const deltaTime = time - lastTime;
     lastTime = time;
 
+    if (isLineClearAnimating) {
+        lineClearElapsed += deltaTime;
+        if (lineClearElapsed >= lineClearDuration) {
+            finalizeLineClear();
+        }
+        draw();
+        requestAnimationFrame(update);
+        return;
+    }
+
+    const activeDropInterval = time < softDropUntil
+        ? Math.min(dropInterval, softDropInterval)
+        : dropInterval;
+
     dropCounter += deltaTime;
-    if (dropCounter > dropInterval) {
+    if (dropCounter > activeDropInterval) {
         playerDrop();
     }
 
@@ -335,15 +414,17 @@ function hardDrop() {
         player.pos.y++;
     }
     player.pos.y--;
-    merge(arena, player);
-    playerReset();
-    arenaSweep();
-    updateScore();
+    lockPiece();
     dropCounter = 0;
 }
 
+function triggerSoftDrop() {
+    const now = performance.now();
+    softDropUntil = Math.max(softDropUntil, now + softDropDuration);
+}
+
 document.addEventListener('keydown', event => {
-    if (isGameOver) return;
+    if (isGameOver || isLineClearAnimating) return;
     
     if (event.keyCode === 37) { // Left arrow
         playerMove(-1);
@@ -368,7 +449,7 @@ const horizontalStepPixels = 28;
 const maxHorizontalMovesPerSwipe = 6;
 
 function onTouchStart(event) {
-    if (isGameOver || event.touches.length === 0) return;
+    if (isGameOver || isLineClearAnimating || event.touches.length === 0) return;
     const touch = event.touches[0];
     touchStartX = touch.clientX;
     touchStartY = touch.clientY;
@@ -377,7 +458,7 @@ function onTouchStart(event) {
 }
 
 function onTouchEnd(event) {
-    if (isGameOver || event.changedTouches.length === 0) return;
+    if (isGameOver || isLineClearAnimating || event.changedTouches.length === 0) return;
     const touch = event.changedTouches[0];
     const dx = touch.clientX - touchStartX;
     const dy = touch.clientY - touchStartY;
@@ -405,7 +486,7 @@ function onTouchEnd(event) {
     }
 
     if (absDy > swipeThreshold && dy > 0) {
-        hardDrop();
+        triggerSoftDrop();
         event.preventDefault();
     }
 }
