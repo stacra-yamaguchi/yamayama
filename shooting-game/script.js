@@ -236,6 +236,7 @@ let items = [];
 let boss = null;
 let keys = {};
 const moveKeyCodes = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+const mobileTouchLeadOffset = { x: 0, y: 96 };
 const mobileButtons = {
     up: document.getElementById('btn-up'),
     down: document.getElementById('btn-down'),
@@ -325,13 +326,15 @@ function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
 }
 
-function movePlayerToClient(clientX, clientY) {
+function movePlayerToClient(clientX, clientY, useMobileTouchLead = false) {
     if (isGameOver) return;
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    const x = (clientX - rect.left) * scaleX;
-    const y = (clientY - rect.top) * scaleY;
+    const leadX = useMobileTouchLead ? mobileTouchLeadOffset.x : 0;
+    const leadY = useMobileTouchLead ? mobileTouchLeadOffset.y : 0;
+    const x = (clientX - rect.left) * scaleX + leadX;
+    const y = (clientY - rect.top) * scaleY - leadY;
     player.x = clamp(x, 30, canvas.width - 30);
     player.y = clamp(y, 30, canvas.height - 30);
 }
@@ -354,12 +357,12 @@ if (window.PointerEvent) {
         if (e.pointerType !== 'touch') return;
         e.preventDefault();
         activeCanvasTouchId = e.pointerId;
-        movePlayerToClient(e.clientX, e.clientY);
+        movePlayerToClient(e.clientX, e.clientY, true);
     });
     canvas.addEventListener('pointermove', (e) => {
         if (e.pointerId !== activeCanvasTouchId) return;
         e.preventDefault();
-        movePlayerToClient(e.clientX, e.clientY);
+        movePlayerToClient(e.clientX, e.clientY, true);
     });
     canvas.addEventListener('pointerup', (e) => {
         if (e.pointerId === activeCanvasTouchId) activeCanvasTouchId = null;
@@ -372,13 +375,13 @@ if (window.PointerEvent) {
         if (!e.changedTouches[0]) return;
         e.preventDefault();
         activeCanvasTouchId = e.changedTouches[0].identifier;
-        movePlayerToClient(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+        movePlayerToClient(e.changedTouches[0].clientX, e.changedTouches[0].clientY, true);
     }, { passive: false });
     canvas.addEventListener('touchmove', (e) => {
         const touch = Array.from(e.changedTouches).find(t => t.identifier === activeCanvasTouchId);
         if (!touch) return;
         e.preventDefault();
-        movePlayerToClient(touch.clientX, touch.clientY);
+        movePlayerToClient(touch.clientX, touch.clientY, true);
     }, { passive: false });
     canvas.addEventListener('touchend', (e) => {
         const touch = Array.from(e.changedTouches).find(t => t.identifier === activeCanvasTouchId);
