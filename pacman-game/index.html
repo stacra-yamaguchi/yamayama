@@ -18,6 +18,7 @@
         <h1 class="game-title">PAC-MAN CLONE</h1>
         <div class="score-display">SCORE: <span id="score">0</span></div>
         <div class="lives-display">LIVES: <span id="lives">❤️❤️❤️</span></div>
+        <div class="stage-display">STAGE: <span id="stage">1</span> / NEXT: <span id="next-stage">1200</span>点</div>
         <div class="game-over" id="game-over">
             <h2>GAME OVER</h2>
             <p>Score: <span id="final-score">0</span></p>
@@ -29,7 +30,7 @@
             <button onclick="resetGame()">PLAY AGAIN</button>
         </div>
         <canvas id="gameCanvas"></canvas>
-        <p class="controls">MOVE: Arrow Keys / Swipe (moving中でも方向予約)</p>
+        <p class="controls">MOVE: Arrow Keys / Swipe (moving中でも方向予約) | 目標スコア到達でステージクリア</p>
         <div class="game-meta">
             <span>Version 1.0.1</span>
             <span>Last Updated: 2026-02-17 21:34 JST</span>
