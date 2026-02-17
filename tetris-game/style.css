@@ -20,6 +20,7 @@ body {
     min-height: 100vh;
     margin: 0;
     overflow: hidden;
+    overscroll-behavior: none;
     background: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #000000 100%);
 }
 
@@ -80,6 +81,7 @@ canvas#tetris {
     background: rgba(0, 0, 0, 0.8);
     display: block;
     border: 1px solid #333;
+    touch-action: none;
 }
 
 .game-sidebar {

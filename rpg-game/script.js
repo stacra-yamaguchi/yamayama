@@ -7,6 +7,7 @@ const screens = {
     location: document.getElementById('location-screen'),
     battle: document.getElementById('battle-screen'),
 };
+const gameContainerEl = document.querySelector('.game-container');
 
 const worldMapEl = document.getElementById('world-map');
 const worldMessageEl = document.getElementById('world-message');
@@ -250,6 +251,17 @@ const state = {
     savePoint: null,
 };
 
+const touchState = {
+    active: false,
+    startX: 0,
+    startY: 0,
+    startTime: 0,
+    multiTouch: false,
+};
+const TOUCH_SWIPE_THRESHOLD = 22;
+const TOUCH_TAP_MAX_DISTANCE = 14;
+const TOUCH_TAP_MAX_MS = 320;
+
 document.addEventListener('keydown', (event) => {
     const key = event.key;
     if (key.startsWith('Arrow')) {
@@ -268,6 +280,7 @@ document.addEventListener('keydown', (event) => {
 initGame();
 
 function initGame() {
+    setupTouchControls();
     const loaded = tryLoadSavedGame();
     if (!loaded) {
         state.savePoint = createSnapshot('旅立ちの記録');
@@ -386,6 +399,163 @@ function directionFromKey(key) {
     return null;
 }
 
+function setupTouchControls() {
+    if (!gameContainerEl) return;
+
+    gameContainerEl.addEventListener('touchstart', handleTouchStart, { passive: false });
+    gameContainerEl.addEventListener('touchmove', handleTouchMove, { passive: false });
+    gameContainerEl.addEventListener('touchend', handleTouchEnd, { passive: false });
+    gameContainerEl.addEventListener('touchcancel', resetTouchState, { passive: true });
+}
+
+function handleTouchStart(event) {
+    if (event.touches.length === 0) {
+        return;
+    }
+
+    const touch = event.touches[0];
+    touchState.active = true;
+    touchState.startX = touch.clientX;
+    touchState.startY = touch.clientY;
+    touchState.startTime = Date.now();
+    touchState.multiTouch = event.touches.length > 1;
+
+    event.preventDefault();
+}
+
+function handleTouchMove(event) {
+    if (!touchState.active) return;
+    event.preventDefault();
+}
+
+function handleTouchEnd(event) {
+    if (!touchState.active || event.changedTouches.length === 0) {
+        resetTouchState();
+        return;
+    }
+
+    event.preventDefault();
+
+    if (touchState.multiTouch) {
+        handleTouchSecondaryAction();
+        resetTouchState();
+        return;
+    }
+
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - touchState.startX;
+    const dy = touch.clientY - touchState.startY;
+    const absX = Math.abs(dx);
+    const absY = Math.abs(dy);
+    const elapsed = Date.now() - touchState.startTime;
+    const distance = Math.hypot(dx, dy);
+
+    if (distance <= TOUCH_TAP_MAX_DISTANCE && elapsed <= TOUCH_TAP_MAX_MS) {
+        handleTapAction();
+        resetTouchState();
+        return;
+    }
+
+    if (Math.max(absX, absY) >= TOUCH_SWIPE_THRESHOLD) {
+        const direction = absX >= absY ? (dx >= 0 ? 'right' : 'left') : (dy >= 0 ? 'down' : 'up');
+        handleSwipeAction(direction);
+    }
+
+    resetTouchState();
+}
+
+function resetTouchState() {
+    touchState.active = false;
+    touchState.startX = 0;
+    touchState.startY = 0;
+    touchState.startTime = 0;
+    touchState.multiTouch = false;
+}
+
+function handleTapAction() {
+    if (state.screen === 'world') {
+        handleWorldInput('Enter');
+        return;
+    }
+
+    if (state.screen === 'location') {
+        if (state.location.mode === 'menu') {
+            executeLocationMenu();
+        } else {
+            interactLocationObject();
+        }
+        return;
+    }
+
+    if (state.screen === 'battle') {
+        executeBattleCommand(battleOptionEls[state.battle.optionIndex].dataset.cmd);
+    }
+}
+
+function handleTouchSecondaryAction() {
+    if (state.screen !== 'location') {
+        return;
+    }
+
+    if (state.location.mode === 'menu') {
+        closeLocationMenu();
+        return;
+    }
+
+    leaveLocation('ワールドへ戻った。');
+}
+
+function handleSwipeAction(direction) {
+    if (state.screen === 'world') {
+        const dir = directionToDelta(direction);
+        if (!dir) return;
+        moveWorldPlayer(dir.dx, dir.dy);
+        return;
+    }
+
+    if (state.screen === 'location') {
+        if (state.location.mode === 'menu') {
+            if (direction === 'up') moveLocationMenu(-1);
+            if (direction === 'down') moveLocationMenu(1);
+            if (direction === 'left') closeLocationMenu();
+            return;
+        }
+
+        const dir = directionToDelta(direction);
+        if (!dir) return;
+        moveLocationPlayer(dir.dx, dir.dy);
+        return;
+    }
+
+    if (state.screen === 'battle') {
+        if (direction === 'up') {
+            state.battle.optionIndex = (state.battle.optionIndex - 1 + battleOptionEls.length) % battleOptionEls.length;
+            renderBattle();
+            return;
+        }
+        if (direction === 'down') {
+            state.battle.optionIndex = (state.battle.optionIndex + 1) % battleOptionEls.length;
+            renderBattle();
+            return;
+        }
+        if (direction === 'left' && state.battle.canRun) {
+            executeBattleCommand('run');
+            return;
+        }
+        if (direction === 'right') {
+            executeBattleCommand('attack');
+        }
+    }
+}
+
+function directionToDelta(direction) {
+    if (direction === 'up') return { dx: 0, dy: -1 };
+    if (direction === 'down') return { dx: 0, dy: 1 };
+    if (direction === 'left') return { dx: -1, dy: 0 };
+    if (direction === 'right') return { dx: 1, dy: 0 };
+    return null;
+}
+
 function moveWorldPlayer(dx, dy) {
     const nx = state.player.x + dx;
     const ny = state.player.y + dy;
@@ -408,7 +578,7 @@ function moveWorldPlayer(dx, dy) {
     const continent = getCurrentContinentName();
 
     if (location) {
-        setWorldMessage(`${location.name} に到着。Enter で入る。`);
+        setWorldMessage(`${location.name} に到着。Enter かタップで入る。`);
     } else if (nextTile === 'ocean') {
         setWorldMessage(`航海中... (${continent})`);
     } else {
@@ -506,9 +676,9 @@ function moveLocationPlayer(dx, dy) {
 
     const object = getCurrentLocationObject();
     if (object) {
-        state.location.hint = `Enter: ${object.label}`;
+        state.location.hint = `決定(Enter/タップ): ${object.label}`;
     } else {
-        state.location.hint = '矢印キーで散策。対象の上で Enter。Esc で外へ。';
+        state.location.hint = '移動(矢印/フリック)。対象の上で決定(Enter/タップ)。戻る(Esc/2本指タップ)。';
     }
 
     renderLocation();
@@ -1495,8 +1665,8 @@ function renderLocation() {
 
     const standingObject = getCurrentLocationObject();
     state.location.hint = standingObject
-        ? `Enter: ${standingObject.label}`
-        : '矢印キーで散策。対象の上で Enter。Esc で外へ。';
+        ? `決定(Enter/タップ): ${standingObject.label}`
+        : '移動(矢印/フリック)。対象の上で決定(Enter/タップ)。戻る(Esc/2本指タップ)。';
 
     locationHintEl.textContent = state.location.hint;
     locationStatusEl.textContent = `HP ${state.player.hp}/${state.player.maxHp}\nGOLD ${state.player.gold}G\n四天王 ${state.story.fourKingsCleared.length}/4\n勇者の剣 ${state.player.heroSword ? 'あり' : 'なし'}`;
@@ -1515,9 +1685,9 @@ function renderLocation() {
     } else {
         locationMenuTitleEl.textContent = '探索操作';
         locationOptionsEl.innerHTML = [
-            '<li>矢印キー: 移動</li>',
-            '<li>Enter: 調べる/行動</li>',
-            '<li>Esc: 外へ戻る</li>',
+            '<li>移動: 矢印キー / フリック</li>',
+            '<li>決定: Enter / タップ</li>',
+            '<li>戻る: Esc / 2本指タップ</li>',
         ].join('');
     }
 

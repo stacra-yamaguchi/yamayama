@@ -330,6 +330,18 @@ const nextPiece = {
     matrix: null
 };
 
+function hardDrop() {
+    while (!collide(arena, player)) {
+        player.pos.y++;
+    }
+    player.pos.y--;
+    merge(arena, player);
+    playerReset();
+    arenaSweep();
+    updateScore();
+    dropCounter = 0;
+}
+
 document.addEventListener('keydown', event => {
     if (isGameOver) return;
     
@@ -342,18 +354,58 @@ document.addEventListener('keydown', event => {
     } else if (event.keyCode === 38) { // Up arrow - Rotate
         playerRotate(1);
     } else if (event.keyCode === 32) { // Space - Hard Drop
-        // Simple hard drop implementation
-        while (!collide(arena, player)) {
-            player.pos.y++;
-        }
-        player.pos.y--; // Back up one step
-        merge(arena, player);
-        playerReset();
-        arenaSweep();
-        updateScore();
-        dropCounter = 0;
+        hardDrop();
     }
 });
+
+let touchStartX = 0;
+let touchStartY = 0;
+let touchStartTime = 0;
+const swipeThreshold = 20;
+const tapThreshold = 12;
+const tapMaxDuration = 220;
+
+function onTouchStart(event) {
+    if (isGameOver || event.touches.length === 0) return;
+    const touch = event.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    touchStartTime = Date.now();
+    event.preventDefault();
+}
+
+function onTouchEnd(event) {
+    if (isGameOver || event.changedTouches.length === 0) return;
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - touchStartX;
+    const dy = touch.clientY - touchStartY;
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+    const duration = Date.now() - touchStartTime;
+
+    if (absDx < tapThreshold && absDy < tapThreshold && duration <= tapMaxDuration) {
+        playerRotate(1);
+        event.preventDefault();
+        return;
+    }
+
+    if (absDx >= absDy && absDx > swipeThreshold) {
+        playerMove(dx > 0 ? 1 : -1);
+        event.preventDefault();
+        return;
+    }
+
+    if (absDy > swipeThreshold && dy > 0) {
+        hardDrop();
+        event.preventDefault();
+    }
+}
+
+canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+canvas.addEventListener('touchend', onTouchEnd, { passive: false });
+canvas.addEventListener('touchmove', (event) => {
+    event.preventDefault();
+}, { passive: false });
 
 startBtn.addEventListener('click', restartGame);
 

@@ -82,6 +82,9 @@ const pacman = {
 };
 
 let ghosts = [];
+let touchStartX = 0;
+let touchStartY = 0;
+const swipeThreshold = 18;
 
 document.addEventListener('keydown', (e) => {
     if(!gameRunning) return;
@@ -90,6 +93,45 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowLeft' || e.key === 'a') pacman.nextDirection = 2;
     if (e.key === 'ArrowUp' || e.key === 'w') pacman.nextDirection = 3;
 });
+
+function handleTouchStart(e) {
+    if (!gameRunning || e.touches.length === 0) return;
+    const touch = e.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    e.preventDefault();
+}
+
+function handleTouchMove(e) {
+    if (!gameRunning) return;
+    e.preventDefault();
+}
+
+function handleTouchEnd(e) {
+    if (!gameRunning || e.changedTouches.length === 0) return;
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - touchStartX;
+    const dy = touch.clientY - touchStartY;
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+
+    if (absDx < swipeThreshold && absDy < swipeThreshold) {
+        e.preventDefault();
+        return;
+    }
+
+    if (absDx >= absDy) {
+        pacman.nextDirection = dx > 0 ? 0 : 2;
+    } else {
+        pacman.nextDirection = dy > 0 ? 1 : 3;
+    }
+    e.preventDefault();
+}
+
+canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false });
 
 function initGame() {
     const isMobile = window.innerWidth < 768;
