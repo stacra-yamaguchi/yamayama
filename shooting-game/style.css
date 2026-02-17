@@ -109,6 +109,16 @@ canvas {
     font-size: 12px;
 }
 
+.game-meta {
+    margin-top: 10px;
+    font-size: 10px;
+    color: #9cbec2;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    line-height: 1.4;
+}
+
 .bottom-hud {
     display: flex;
     justify-content: space-around;
@@ -140,4 +150,13 @@ canvas {
 .back-link:hover {
     opacity: 0.7;
     text-shadow: 0 0 5px #00ffff;
+}
+
+@media (max-width: 700px) {
+    .game-meta {
+        flex-direction: column;
+        gap: 4px;
+        margin-top: 8px;
+        font-size: 9px;
+    }
 }

@@ -438,6 +438,16 @@ h3 {
     font-size: 14px;
 }
 
+.game-meta {
+    position: absolute;
+    bottom: -28px;
+    right: 0;
+    display: flex;
+    gap: 10px;
+    color: #7fa9bc;
+    font-size: 13px;
+}
+
 .back-link:hover {
     color: #fff;
 }
@@ -489,5 +499,19 @@ h3 {
         width: auto;
         height: auto;
         aspect-ratio: 1 / 1;
+    }
+
+    .game-meta {
+        position: static;
+        margin-top: 8px;
+        justify-content: flex-end;
+        font-size: 12px;
+        gap: 8px;
+    }
+
+    .back-link {
+        position: static;
+        display: inline-block;
+        margin-top: 8px;
     }
 }

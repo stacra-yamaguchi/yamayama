@@ -61,6 +61,16 @@ body {
     text-shadow: 0 0 5px var(--neon-blue);
 }
 
+.game-meta {
+    margin-top: 8px;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.65);
+    letter-spacing: 0.4px;
+}
+
 .game-content {
     display: flex;
     gap: 30px;
@@ -261,5 +271,11 @@ canvas#tetris {
     .game-title {
         font-size: 2rem;
         letter-spacing: 2px;
+    }
+
+    .game-meta {
+        flex-direction: column;
+        gap: 4px;
+        font-size: 0.68rem;
     }
 }

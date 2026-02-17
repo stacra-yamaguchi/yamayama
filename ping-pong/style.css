@@ -232,6 +232,16 @@ canvas {
     line-height: 1.6;
 }
 
+.game-meta {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    font-size: 10px;
+    color: #7eb0bb;
+    line-height: 1.4;
+}
+
 .back-link {
     display: inline-block;
     margin-top: 20px;
@@ -308,6 +318,11 @@ canvas {
         margin-top: 10px;
         font-size: 9px;
     }
+    .game-meta {
+        margin-top: 8px;
+        font-size: 8px;
+        gap: 6px;
+    }
     .back-link {
         margin-top: 10px;
         font-size: 10px;
@@ -326,5 +341,9 @@ canvas {
     .score-name,
     .phase-board {
         font-size: 7px;
+    }
+    .game-meta {
+        flex-direction: column;
+        gap: 3px;
     }
 }
