@@ -83,24 +83,6 @@ canvas {
     color: #a9f3ff;
 }
 
-.effect-board {
-    margin: 7px auto 0;
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-.effect-board div {
-    min-width: 145px;
-    border: 1px solid rgba(132, 193, 255, 0.4);
-    border-radius: 999px;
-    padding: 4px 10px;
-    text-align: center;
-    font-size: 0.64rem;
-    background: rgba(10, 26, 46, 0.74);
-}
-
 .overlay {
     position: absolute;
     inset: 0;
@@ -181,11 +163,6 @@ canvas {
     .hud-card {
         font-size: 0.6rem;
         padding: 5px 6px;
-    }
-
-    .effect-board div {
-        min-width: 120px;
-        font-size: 0.58rem;
     }
 
     .back-link {

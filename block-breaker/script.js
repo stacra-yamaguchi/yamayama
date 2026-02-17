@@ -6,9 +6,6 @@ const ui = {
     blocksLeft: document.getElementById("blocks-left"),
     score: document.getElementById("score"),
     lives: document.getElementById("lives"),
-    slowEffect: document.getElementById("slow-effect"),
-    splitEffect: document.getElementById("split-effect"),
-    pierceEffect: document.getElementById("pierce-effect"),
     overlay: document.getElementById("overlay"),
     overlayMessage: document.getElementById("overlay-message"),
     restartBtn: document.getElementById("restart-btn")
@@ -261,18 +258,6 @@ function updateEffectBoard(now) {
     if (gameState.pierceActive && now >= gameState.pierceUntil) {
         gameState.pierceActive = false;
     }
-
-    ui.slowEffect.textContent = gameState.slowActive
-        ? "SLOW: ON"
-        : "SLOW: OFF";
-
-    ui.splitEffect.textContent = gameState.splitActive
-        ? "SPLIT: ON"
-        : "SPLIT: OFF";
-
-    ui.pierceEffect.textContent = gameState.pierceActive
-        ? "PIERCE: ON"
-        : "PIERCE: OFF";
 }
 
 function spawnItem(x, y) {
