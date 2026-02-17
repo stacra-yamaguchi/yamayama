@@ -84,13 +84,8 @@ const pacman = {
 let ghosts = [];
 let touchStartX = 0;
 let touchStartY = 0;
-let touchCurrentX = 0;
-let touchCurrentY = 0;
 let touchActive = false;
-let touchDragDirection = null;
-const swipeThreshold = 18;
-const dragStepThreshold = 6;
-const touchDragSpeedFactor = 0.45;
+const swipeThreshold = 14;
 
 function getSwipeDirection(dx, dy, threshold) {
     const absDx = Math.abs(dx);
@@ -113,25 +108,22 @@ function handleTouchStart(e) {
     const touch = e.touches[0];
     touchStartX = touch.clientX;
     touchStartY = touch.clientY;
-    touchCurrentX = touch.clientX;
-    touchCurrentY = touch.clientY;
     touchActive = true;
-    touchDragDirection = null;
     e.preventDefault();
 }
 
 function handleTouchMove(e) {
     if (!gameRunning || !touchActive || e.touches.length === 0) return;
     const touch = e.touches[0];
-    const moveDx = touch.clientX - touchCurrentX;
-    const moveDy = touch.clientY - touchCurrentY;
-    const dragDirection = getSwipeDirection(moveDx, moveDy, dragStepThreshold);
-    if (dragDirection !== null) {
-        touchDragDirection = dragDirection;
-        pacman.nextDirection = dragDirection;
+    const dx = touch.clientX - touchStartX;
+    const dy = touch.clientY - touchStartY;
+    const swipeDirection = getSwipeDirection(dx, dy, swipeThreshold);
+    if (swipeDirection !== null) {
+        pacman.nextDirection = swipeDirection;
+        // 連続フリックを拾いやすくするため、基準点を更新する
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
     }
-    touchCurrentX = touch.clientX;
-    touchCurrentY = touch.clientY;
     e.preventDefault();
 }
 
@@ -145,21 +137,15 @@ function handleTouchEnd(e) {
         const releaseDirection = getSwipeDirection(dx, dy, swipeThreshold);
         if (releaseDirection !== null) {
             pacman.nextDirection = releaseDirection;
-        } else if (touchDragDirection !== null) {
-            pacman.nextDirection = touchDragDirection;
         }
-    } else if (touchDragDirection !== null) {
-        pacman.nextDirection = touchDragDirection;
     }
 
     touchActive = false;
-    touchDragDirection = null;
     e.preventDefault();
 }
 
 function handleTouchCancel(e) {
     touchActive = false;
-    touchDragDirection = null;
     e.preventDefault();
 }
 
@@ -202,7 +188,6 @@ function initGame() {
     particles = [];
     floatingTexts = [];
     touchActive = false;
-    touchDragDirection = null;
     if (animationId) cancelAnimationFrame(animationId);
     update();
 }
@@ -329,8 +314,6 @@ function update() {
     }
 
     // Pacman Movement (Physical Logic)
-    const draggingControl = touchActive && touchDragDirection !== null;
-    const currentPacmanSpeed = draggingControl ? pacman.speed * touchDragSpeedFactor : pacman.speed;
     const centerX = Math.floor(pacman.x / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
     const centerY = Math.floor(pacman.y / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
 
@@ -340,8 +323,8 @@ function update() {
         } else {
             const nextVec = getDirVec(pacman.nextDirection);
             // Snap check for turning
-            if (Math.abs(pacman.x - centerX) <= currentPacmanSpeed && Math.abs(pacman.y - centerY) <= currentPacmanSpeed) {
-                if (canMove(centerX, centerY, nextVec.dx * Math.max(3, currentPacmanSpeed * 2), nextVec.dy * Math.max(3, currentPacmanSpeed * 2))) {
+            if (Math.abs(pacman.x - centerX) <= pacman.speed && Math.abs(pacman.y - centerY) <= pacman.speed) {
+                if (canMove(centerX, centerY, nextVec.dx * 3, nextVec.dy * 3)) {
                     pacman.x = centerX; pacman.y = centerY;
                     pacman.direction = pacman.nextDirection;
                 }
@@ -350,21 +333,21 @@ function update() {
     }
 
     const vec = getDirVec(pacman.direction);
-    if (canMove(pacman.x, pacman.y, vec.dx * currentPacmanSpeed, vec.dy * currentPacmanSpeed)) {
-        pacman.x += vec.dx * currentPacmanSpeed; pacman.y += vec.dy * currentPacmanSpeed;
+    if (canMove(pacman.x, pacman.y, vec.dx * pacman.speed, vec.dy * pacman.speed)) {
+        pacman.x += vec.dx * pacman.speed; pacman.y += vec.dy * pacman.speed;
         
         // Axis locking to center
         if (vec.dx !== 0) {
-            if (Math.abs(pacman.y - centerY) < currentPacmanSpeed) pacman.y = centerY;
+            if (Math.abs(pacman.y - centerY) < pacman.speed) pacman.y = centerY;
         } else if (vec.dy !== 0) {
-            if (Math.abs(pacman.x - centerX) < currentPacmanSpeed) pacman.x = centerX;
+            if (Math.abs(pacman.x - centerX) < pacman.speed) pacman.x = centerX;
         }
         
-        pacman.mouthOpen += pacman.mouthSpeed * (currentPacmanSpeed / pacman.speed);
+        pacman.mouthOpen += pacman.mouthSpeed;
         if (pacman.mouthOpen > 0.2 || pacman.mouthOpen < 0) pacman.mouthSpeed *= -1;
     } else { 
         // Hit wall, snap to center if close
-        if (Math.hypot(pacman.x - centerX, pacman.y - centerY) < currentPacmanSpeed * 2) {
+        if (Math.hypot(pacman.x - centerX, pacman.y - centerY) < pacman.speed * 2) {
              pacman.x = centerX; pacman.y = centerY; 
         }
     }
