@@ -262,19 +262,16 @@ function updateEffectBoard(now) {
         gameState.pierceActive = false;
     }
 
-    const slowRemain = Math.max(0, gameState.slowUntil - now);
-    const pierceRemain = Math.max(0, gameState.pierceUntil - now);
-
-    ui.slowEffect.textContent = slowRemain > 0
-        ? `SLOW: ${Math.ceil(slowRemain / 1000)}s`
+    ui.slowEffect.textContent = gameState.slowActive
+        ? "SLOW: ON"
         : "SLOW: OFF";
 
     ui.splitEffect.textContent = gameState.splitActive
         ? "SPLIT: ON"
         : "SPLIT: OFF";
 
-    ui.pierceEffect.textContent = pierceRemain > 0
-        ? `PIERCE: ${Math.ceil(pierceRemain / 1000)}s`
+    ui.pierceEffect.textContent = gameState.pierceActive
+        ? "PIERCE: ON"
         : "PIERCE: OFF";
 }
 
