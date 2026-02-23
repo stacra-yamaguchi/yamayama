@@ -298,6 +298,125 @@ body {
     backdrop-filter: blur(2px);
 }
 
+.battle-scene-overlay {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    z-index: 9;
+    border: 1px solid rgba(214, 235, 168, 0.5);
+    border-radius: 12px;
+    background: linear-gradient(160deg, rgba(8, 16, 8, 0.86), rgba(8, 18, 8, 0.64));
+    padding: 8px 10px;
+    pointer-events: none;
+    backdrop-filter: blur(3px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.24);
+}
+
+.battle-scene-overlay.hidden {
+    display: none;
+}
+
+.battle-scene-top {
+    top: 8px;
+}
+
+.battle-scene-bottom {
+    bottom: 8px;
+}
+
+.battle-scene-main {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+}
+
+.battle-scene-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    border: 1px solid rgba(202, 236, 137, 0.5);
+    background: rgba(7, 16, 8, 0.7);
+    object-fit: contain;
+    padding: 3px;
+}
+
+.battle-scene-avatar.enemy {
+    border-color: rgba(255, 188, 130, 0.72);
+}
+
+.battle-scene-avatar.player {
+    border-color: rgba(149, 223, 132, 0.72);
+}
+
+.battle-scene-info {
+    display: grid;
+    gap: 3px;
+}
+
+.battle-scene-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: baseline;
+}
+
+.battle-scene-head p {
+    margin: 0;
+    line-height: 1.1;
+}
+
+.battle-scene-head p:first-child {
+    font-size: 0.84rem;
+    color: #f4ffdf;
+    font-weight: 700;
+}
+
+.battle-scene-head p:last-child {
+    font-size: 0.68rem;
+    color: #c4dea1;
+}
+
+.battle-scene-hand {
+    margin: 0;
+    font-size: 0.76rem;
+    color: #d4f0b7;
+}
+
+.battle-scene-hand strong {
+    font-family: "Orbitron", "Noto Sans JP", sans-serif;
+    color: #f8ffe7;
+}
+
+.battle-scene-hp {
+    margin: 0;
+    font-family: "Orbitron", "Noto Sans JP", sans-serif;
+    font-size: 0.74rem;
+    color: #ecffd4;
+}
+
+.battle-scene-bar {
+    height: 10px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(193, 225, 133, 0.42);
+}
+
+.battle-scene-bar span {
+    display: block;
+    height: 100%;
+    width: 100%;
+}
+
+.battle-scene-bar.enemy span {
+    background: linear-gradient(90deg, #ff8e66, #ff615f);
+}
+
+.battle-scene-bar.player span {
+    background: linear-gradient(90deg, #74dd5a, #b9ea61);
+}
+
 .rps-overlay {
     position: absolute;
     top: 8px;
@@ -315,6 +434,12 @@ body {
 }
 
 .rps-overlay.hidden {
+    display: none;
+}
+
+body.battle-active .field-hud,
+body.battle-active .rps-overlay,
+body.battle-active .map-overlay {
     display: none;
 }
 
@@ -1061,6 +1186,40 @@ body.input-touch .touch-pad {
         border-radius: 0;
     }
 
+    body.input-touch .battle-scene-overlay {
+        left: 8px;
+        right: 8px;
+        padding: 6px 8px;
+        border-radius: 10px;
+    }
+
+    body.input-touch .battle-scene-top {
+        top: max(34px, calc(env(safe-area-inset-top) + 28px));
+    }
+
+    body.input-touch .battle-scene-bottom {
+        bottom: calc(94px + env(safe-area-inset-bottom));
+    }
+
+    body.input-touch .battle-scene-main {
+        gap: 8px;
+    }
+
+    body.input-touch .battle-scene-avatar {
+        width: 46px;
+        height: 46px;
+    }
+
+    body.input-touch .battle-scene-head p:first-child {
+        font-size: 0.74rem;
+    }
+
+    body.input-touch .battle-scene-head p:last-child,
+    body.input-touch .battle-scene-hand,
+    body.input-touch .battle-scene-hp {
+        font-size: 0.66rem;
+    }
+
     body.input-touch .field-hud {
         top: max(36px, calc(env(safe-area-inset-top) + 30px));
         left: 8px;
@@ -1088,6 +1247,18 @@ body.input-touch .touch-pad {
 
     body.input-touch .map-overlay p {
         font-size: 0.62rem;
+    }
+
+    body.input-touch.battle-active .field-hud-bars {
+        display: none;
+    }
+
+    body.input-touch.battle-active .field-hud {
+        top: max(36px, calc(env(safe-area-inset-top) + 22px));
+    }
+
+    body.input-touch.battle-active .map-overlay {
+        display: none;
     }
 
     body.input-touch .map-actions {
@@ -1125,6 +1296,16 @@ body.input-touch .touch-pad {
         font-size: 1rem;
     }
 
+    /* Mobile: remove arrow pad and engage button from gameplay area */
+    body.input-touch .map-actions,
+    body.input-touch .touch-pad {
+        display: none;
+    }
+
+    body.input-touch .map-overlay {
+        bottom: 8px;
+    }
+
     body.input-touch .battle-panel {
         border: 0;
         border-top: 1px solid rgba(154, 207, 109, 0.42);
@@ -1132,13 +1313,13 @@ body.input-touch .touch-pad {
         background: rgba(9, 17, 9, 0.94);
         padding: 8px 8px max(8px, env(safe-area-inset-bottom));
         display: grid;
-        grid-template-rows: auto auto auto;
+        grid-template-rows: auto;
         gap: 6px;
-        max-height: 192px;
+        max-height: 84px;
     }
 
     body.input-touch .battle-panel .panel-head {
-        margin: 0;
+        display: none;
     }
 
     body.input-touch .battle-panel .panel-head h2 {
@@ -1150,8 +1331,7 @@ body.input-touch .touch-pad {
     }
 
     body.input-touch .battle-target {
-        min-height: 64px;
-        padding: 7px;
+        display: none;
     }
 
     body.input-touch .target-name {
@@ -1182,5 +1362,13 @@ body.input-touch .touch-pad {
     body.input-touch .action-row.utility,
     body.input-touch .log-panel {
         display: none;
+    }
+}
+
+/* Fallback: ensure mobile viewport always hides arrow pad and engage button */
+@media (max-width: 900px) {
+    .map-actions,
+    .touch-pad {
+        display: none !important;
     }
 }

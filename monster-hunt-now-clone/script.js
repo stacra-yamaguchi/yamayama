@@ -33,6 +33,20 @@ const ui = {
     fieldHpBar: document.getElementById("field-hp-bar"),
     fieldStaminaText: document.getElementById("field-stamina-text"),
     fieldStaminaBar: document.getElementById("field-stamina-bar"),
+    battleTopOverlay: document.getElementById("battle-top-overlay"),
+    battleTopAvatar: document.getElementById("battle-top-avatar"),
+    battleTopName: document.getElementById("battle-top-name"),
+    battleTopRound: document.getElementById("battle-top-round"),
+    battleTopHand: document.getElementById("battle-top-hand"),
+    battleTopHpBar: document.getElementById("battle-top-hp-bar"),
+    battleTopHpText: document.getElementById("battle-top-hp-text"),
+    battleBottomOverlay: document.getElementById("battle-bottom-overlay"),
+    battleBottomAvatar: document.getElementById("battle-bottom-avatar"),
+    battleBottomName: document.getElementById("battle-bottom-name"),
+    battleBottomRank: document.getElementById("battle-bottom-rank"),
+    battleBottomHand: document.getElementById("battle-bottom-hand"),
+    battleBottomHpBar: document.getElementById("battle-bottom-hp-bar"),
+    battleBottomHpText: document.getElementById("battle-bottom-hp-text"),
     rpsRockBtn: document.getElementById("rps-rock-btn"),
     rpsScissorsBtn: document.getElementById("rps-scissors-btn"),
     rpsPaperBtn: document.getElementById("rps-paper-btn"),
@@ -50,6 +64,7 @@ const ctx = canvas.getContext("2d");
 const IS_TOUCH_DEVICE = window.matchMedia("(pointer: coarse)").matches
     || "ontouchstart" in window
     || navigator.maxTouchPoints > 0;
+const IS_MOBILE_UA = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 
 const WORLD = {
     width: 2300,
@@ -65,10 +80,20 @@ const RPS_LABEL = {
     scissors: "チョキ",
     paper: "パー"
 };
+const RPS_ICON = {
+    rock: "✊",
+    scissors: "✌",
+    paper: "✋"
+};
 const BATTLE_PHASE = {
     ENCOUNTER: "encounter",
-    ACTIVE: "active"
+    ACTIVE: "active",
+    RESULT: "result"
 };
+const BATTLE_ZOOM_TOUCH = 1.84;
+const BATTLE_ZOOM_DESKTOP = 1.56;
+const BATTLE_PLAYER_OFFSET_Y = 118;
+const BATTLE_MONSTER_OFFSET_Y = 20;
 const HEALING_ITEM_TYPES = [
     {
         id: "first-aid",
@@ -104,7 +129,7 @@ const monsterCatalog = [
         hpBase: 150,
         attackBase: 11,
         rewardMaterial: "竜骨片",
-        sprite: "images/monster_fang_raptor.svg"
+        sprite: "images/monster_fang_raptor.png"
     },
     {
         id: "moss-bear",
@@ -113,7 +138,7 @@ const monsterCatalog = [
         hpBase: 210,
         attackBase: 15,
         rewardMaterial: "堅殻",
-        sprite: "images/monster_moss_bear.svg"
+        sprite: "images/monster_moss_bear.png"
     },
     {
         id: "lava-horn",
@@ -122,7 +147,7 @@ const monsterCatalog = [
         hpBase: 260,
         attackBase: 19,
         rewardMaterial: "紅蓮鉱石",
-        sprite: "images/monster_lava_horn.svg"
+        sprite: "images/monster_lava_horn.png"
     },
     {
         id: "storm-wyvern",
@@ -131,7 +156,7 @@ const monsterCatalog = [
         hpBase: 320,
         attackBase: 23,
         rewardMaterial: "飛竜鱗",
-        sprite: "images/monster_storm_wyvern.svg"
+        sprite: "images/monster_storm_wyvern.png"
     }
 ];
 
@@ -238,6 +263,21 @@ function starsText(star) {
 
 function expToNextRank(rank) {
     return 90 + rank * 30;
+}
+
+function getPlayerSpriteKey() {
+    const player = gameState.player;
+    if (Math.abs(player.dirX) > Math.abs(player.dirY)) {
+        return player.dirX >= 0 ? "playerRight" : "playerLeft";
+    }
+    return player.dirY < 0 ? "playerBack" : "playerFront";
+}
+
+function getHandLabel(hand, phase) {
+    if (!hand) {
+        return phase === BATTLE_PHASE.ENCOUNTER ? "構え中" : "待機";
+    }
+    return `${RPS_LABEL[hand]} ${RPS_ICON[hand]}`;
 }
 
 function formatGpsValue(value) {
@@ -565,10 +605,22 @@ function startBattle(monsterId) {
         return;
     }
 
+    const plannedZoom = IS_TOUCH_DEVICE ? BATTLE_ZOOM_TOUCH : BATTLE_ZOOM_DESKTOP;
+    const safeMarginX = IS_TOUCH_DEVICE
+        ? Math.max(220, (canvas.width / plannedZoom) * 0.82)
+        : Math.max(170, (canvas.width / plannedZoom) * 0.66);
+    const safeMarginY = IS_TOUCH_DEVICE
+        ? Math.max(230, (canvas.height / plannedZoom) * 0.84)
+        : Math.max(170, (canvas.height / plannedZoom) * 0.66);
+    const arenaX = clamp(player.x, safeMarginX, WORLD.width - safeMarginX);
+    const arenaY = clamp(player.y, safeMarginY, WORLD.height - safeMarginY);
+    const laneSign = 1;
+    const returnX = player.x;
+    const returnY = player.y;
+
     gameState.battle = {
         monsterId: monster.uid,
         hp: monster.hpMax,
-        timer: 75,
         phase: BATTLE_PHASE.ENCOUNTER,
         phaseTime: 0,
         introDuration: 1.05,
@@ -578,12 +630,21 @@ function startBattle(monsterId) {
         lastPlayerHand: null,
         lastMonsterHand: null,
         playerAnim: 0,
-        monsterAnim: 0
+        monsterAnim: 0,
+        arena: {
+            x: arenaX,
+            y: arenaY,
+            laneSign
+        },
+        returnX,
+        returnY
     };
 
     monster.state = "battle";
-    monster.x = clamp(player.x + player.dirX * 120 + randomRange(-20, 20), 50, WORLD.width - 50);
-    monster.y = clamp(player.y + player.dirY * 80 + randomRange(-18, 18), 50, WORLD.height - 50);
+    player.x = clamp(arenaX + randomRange(-10, 10), 56, WORLD.width - 56);
+    player.y = clamp(arenaY + BATTLE_PLAYER_OFFSET_Y * laneSign + randomRange(-6, 6), 56, WORLD.height - 56);
+    monster.x = clamp(arenaX + randomRange(-18, 18), 56, WORLD.width - 56);
+    monster.y = clamp(arenaY - BATTLE_MONSTER_OFFSET_Y * laneSign + randomRange(-8, 8), 56, WORLD.height - 56);
     player.moveTarget = null;
     clearTouchVector();
 
@@ -610,6 +671,36 @@ function createHitEffect(x, y, color) {
         maxTtl: 0.25,
         color
     });
+}
+
+function createVictoryBurst(x, y) {
+    for (let i = 0; i < 18; i += 1) {
+        gameState.effects.push({
+            x: x + randomRange(-34, 34),
+            y: y + randomRange(-30, 24),
+            size: randomRange(26, 56),
+            ttl: randomRange(0.38, 0.86),
+            maxTtl: randomRange(0.38, 0.86),
+            color: i % 2 === 0 ? "255,220,130" : "170,235,255"
+        });
+    }
+}
+
+function triggerVictorySequence(monster, reason) {
+    const battle = gameState.battle;
+    if (!battle) {
+        return;
+    }
+
+    battle.phase = BATTLE_PHASE.RESULT;
+    battle.phaseTime = 0;
+    battle.resultDuration = 1.2;
+    battle.turnCooldown = 99;
+    battle.result = { won: true, reason };
+    battle.playerAnim = Math.max(battle.playerAnim, 0.36);
+    battle.monsterAnim = Math.max(battle.monsterAnim, 0.5);
+    createVictoryBurst(monster.x, monster.y - 16);
+    addLog("討伐成功！報酬を確認中...", "good");
 }
 
 function getWinningHandAgainst(hand) {
@@ -698,7 +789,7 @@ function playRpsRound(playerHand) {
     }
 
     if (battle.hp <= 0) {
-        finishBattle(true, "討伐成功");
+        triggerVictorySequence(monster, "討伐成功");
         return;
     }
 
@@ -715,9 +806,11 @@ function gainExp(amount) {
     while (player.exp >= next) {
         player.exp -= next;
         player.rank += 1;
-        player.maxHp += 6;
+        player.maxHp += 8;
+        player.maxStamina += 7;
         player.hp = player.maxHp;
-        addLog(`ハンターランク ${player.rank} に上昇。`, "good");
+        player.stamina = player.maxStamina;
+        addLog(`ハンターレベル ${player.rank} に上昇。最大HP/最大STが増加。`, "good");
         next = expToNextRank(player.rank);
     }
 }
@@ -741,10 +834,10 @@ function finishBattle(won, reason) {
         gainExp(expGain);
 
         ui.rewardTitle.textContent = "狩猟成功";
-        ui.rewardSummary.textContent = `${reason}\n${monster.base.rewardMaterial} +${materialGain}\n${zennyGain}z / EXP +${expGain}`;
+        ui.rewardSummary.textContent = `${reason}\n${monster.base.rewardMaterial} +${materialGain}\nコイン +${zennyGain} / EXP +${expGain}`;
         ui.rewardModal.classList.remove("hidden");
 
-        addLog(`${monster.base.name} の討伐完了。`, "good");
+        addLog(`${monster.base.name} の討伐完了。コイン+${zennyGain}, EXP+${expGain}`, "good");
         gameState.monsters = gameState.monsters.filter((item) => item.uid !== monster.uid);
     }
 
@@ -763,6 +856,12 @@ function finishBattle(won, reason) {
             monster.y = clamp(monster.y + randomRange(-120, 120), 50, WORLD.height - 50);
         }
     }
+
+    if (Number.isFinite(battle.returnX) && Number.isFinite(battle.returnY)) {
+        player.x = clamp(battle.returnX, player.radius, WORLD.width - player.radius);
+        player.y = clamp(battle.returnY, player.radius, WORLD.height - player.radius);
+    }
+    player.moveTarget = null;
 
     gameState.battle = null;
     gameState.selectedMonsterId = null;
@@ -800,16 +899,64 @@ function updateBattle(delta) {
         return;
     }
 
+    const arena = battle.arena || { x: player.x, y: player.y, laneSign: 1 };
+    const laneSign = arena.laneSign;
+
+    if (battle.phase === BATTLE_PHASE.RESULT) {
+        const resultDuration = battle.resultDuration || 1.2;
+        const progress = clamp(battle.phaseTime / resultDuration, 0, 1);
+        const targetPlayerX = clamp(arena.x, 56, WORLD.width - 56);
+        const targetPlayerY = clamp(arena.y + BATTLE_PLAYER_OFFSET_Y * laneSign, 56, WORLD.height - 56);
+        const targetMonsterX = clamp(arena.x, 56, WORLD.width - 56);
+        const targetMonsterY = clamp(
+            arena.y - BATTLE_MONSTER_OFFSET_Y * laneSign - progress * 22,
+            40,
+            WORLD.height - 40
+        );
+        const followRatio = clamp(delta * 7.8, 0, 1);
+        player.x += (targetPlayerX - player.x) * followRatio;
+        player.y += (targetPlayerY - player.y) * followRatio;
+        monster.x += (targetMonsterX - monster.x) * followRatio;
+        monster.y += (targetMonsterY - monster.y) * followRatio;
+
+        battle.phaseTime += delta;
+        battle.playerAnim = Math.max(0, battle.playerAnim - delta * 0.7);
+        battle.monsterAnim = Math.max(0, battle.monsterAnim - delta * 0.5);
+        gameState.view.targetZoom = (IS_TOUCH_DEVICE ? BATTLE_ZOOM_TOUCH : BATTLE_ZOOM_DESKTOP) + 0.22;
+        player.stamina = clamp(player.stamina + delta * 9, 0, player.maxStamina);
+
+        if (battle.phaseTime >= resultDuration) {
+            finishBattle(true, battle.result?.reason || "討伐成功");
+        }
+        return;
+    }
+
+    const phaseOffset = battle.phase === BATTLE_PHASE.ENCOUNTER ? 0 : Math.sin(gameState.time * 2.4) * 8;
+    const targetPlayerX = clamp(arena.x - phaseOffset * 0.45, 56, WORLD.width - 56);
+    const targetPlayerY = clamp(arena.y + BATTLE_PLAYER_OFFSET_Y * laneSign, 56, WORLD.height - 56);
+    const targetMonsterX = clamp(arena.x + phaseOffset, 56, WORLD.width - 56);
+    const targetMonsterY = clamp(arena.y - BATTLE_MONSTER_OFFSET_Y * laneSign, 56, WORLD.height - 56);
+
+    const followRatio = clamp(delta * 7.2, 0, 1);
+    player.x += (targetPlayerX - player.x) * followRatio;
+    player.y += (targetPlayerY - player.y) * followRatio;
+    monster.x += (targetMonsterX - monster.x) * followRatio;
+    monster.y += (targetMonsterY - monster.y) * followRatio;
+
     const toMonsterX = monster.x - player.x;
     const toMonsterY = monster.y - player.y;
-    const pull = Math.max(0.001, Math.hypot(toMonsterX, toMonsterY));
-
-    monster.x = player.x + (toMonsterX / pull) * clamp(pull, 94, 136);
-    monster.y = player.y + (toMonsterY / pull) * clamp(pull, 70, 120);
+    if (Math.abs(toMonsterX) > Math.abs(toMonsterY)) {
+        player.dirX = Math.sign(toMonsterX) || player.dirX;
+        player.dirY = 0;
+    } else {
+        player.dirX = 0;
+        player.dirY = Math.sign(toMonsterY) || player.dirY;
+    }
 
     battle.phaseTime += delta;
+    const battleZoom = IS_TOUCH_DEVICE ? BATTLE_ZOOM_TOUCH : BATTLE_ZOOM_DESKTOP;
     if (battle.phase === BATTLE_PHASE.ENCOUNTER) {
-        gameState.view.targetZoom = 1.36;
+        gameState.view.targetZoom = battleZoom + 0.16;
         if (battle.phaseTime >= battle.introDuration) {
             battle.phase = BATTLE_PHASE.ACTIVE;
             battle.phaseTime = 0;
@@ -817,19 +964,14 @@ function updateBattle(delta) {
             addLog("会敵完了。じゃんけん開始。", "warn");
         }
     } else {
-        gameState.view.targetZoom = 1.22;
+        gameState.view.targetZoom = battleZoom;
     }
 
-    battle.timer -= delta;
     battle.turnCooldown = Math.max(0, battle.turnCooldown - delta);
     battle.playerAnim = Math.max(0, battle.playerAnim - delta);
     battle.monsterAnim = Math.max(0, battle.monsterAnim - delta);
 
     player.stamina = clamp(player.stamina + delta * 13.5, 0, player.maxStamina);
-
-    if (battle.timer <= 0) {
-        finishBattle(false, "時間切れ");
-    }
 }
 
 function updateOutOfBattle(delta) {
@@ -895,22 +1037,56 @@ function updateViewTransition(delta) {
 
 function updateCamera() {
     const zoom = gameState.view.zoom;
-    const viewW = canvas.width / zoom;
-    const viewH = canvas.height / zoom;
+    const halfW = canvas.width * 0.5;
+    const halfH = canvas.height * 0.5;
 
     let focusX = gameState.player.x;
     let focusY = gameState.player.y;
+    let anchorX = 0.5;
+    let anchorY = 0.5;
 
     if (gameState.battle) {
-        const target = findMonster(gameState.battle.monsterId);
-        if (target) {
+        const battle = gameState.battle;
+        const target = findMonster(battle.monsterId);
+        if (battle.arena) {
+            focusX = battle.arena.x;
+            focusY = battle.arena.y;
+        } else if (target) {
             focusX = (gameState.player.x + target.x) * 0.5;
             focusY = (gameState.player.y + target.y) * 0.5;
         }
+
+        if (IS_TOUCH_DEVICE) {
+            anchorY = battle.phase === BATTLE_PHASE.ENCOUNTER ? 0.53 : 0.51;
+        } else {
+            anchorY = 0.52;
+        }
     }
 
-    gameState.camera.x = clamp(focusX - viewW / 2, 0, Math.max(0, WORLD.width - viewW));
-    gameState.camera.y = clamp(focusY - viewH / 2, 0, Math.max(0, WORLD.height - viewH));
+    const targetScreenX = canvas.width * anchorX;
+    const targetScreenY = canvas.height * anchorY;
+    const targetWorldOffsetX = halfW + (targetScreenX - halfW) / zoom;
+    const targetWorldOffsetY = halfH + (targetScreenY - halfH) / zoom;
+
+    const leftOffsetX = halfW * (1 - 1 / zoom);
+    const rightOffsetX = halfW * (1 + 1 / zoom);
+    const topOffsetY = halfH * (1 - 1 / zoom);
+    const bottomOffsetY = halfH * (1 + 1 / zoom);
+
+    const minCamX = -leftOffsetX;
+    const maxCamX = WORLD.width - rightOffsetX;
+    const minCamY = -topOffsetY;
+    const maxCamY = WORLD.height - bottomOffsetY;
+
+    const rawCamX = focusX - targetWorldOffsetX;
+    const rawCamY = focusY - targetWorldOffsetY;
+
+    gameState.camera.x = minCamX <= maxCamX
+        ? clamp(rawCamX, minCamX, maxCamX)
+        : (minCamX + maxCamX) * 0.5;
+    gameState.camera.y = minCamY <= maxCamY
+        ? clamp(rawCamY, minCamY, maxCamY)
+        : (minCamY + maxCamY) * 0.5;
 }
 
 function worldToScreen(x, y) {
@@ -1058,7 +1234,18 @@ function drawMonster(monster) {
 
     const shakeX = isTarget && battle.monsterAnim > 0 ? randomRange(-3, 3) : 0;
     const shakeY = isTarget && battle.monsterAnim > 0 ? randomRange(-2, 2) : 0;
-    drawSprite(monster.base.id, pos.x + shakeX, pos.y + shakeY, 92, 88);
+    const inResult = isTarget && battle.phase === BATTLE_PHASE.RESULT;
+    const resultDuration = (battle && battle.resultDuration) || 1.2;
+    const resultProgress = inResult ? clamp(battle.phaseTime / resultDuration, 0, 1) : 0;
+    if (inResult) {
+        ctx.save();
+        ctx.globalAlpha = clamp(1 - resultProgress * 0.7, 0.26, 1);
+        drawSprite(monster.base.id, pos.x + shakeX, pos.y + shakeY + resultProgress * 18, 92, 88);
+        ctx.restore();
+    } else {
+        drawSprite(monster.base.id, pos.x + shakeX, pos.y + shakeY, 92, 88);
+    }
+    const spriteTopY = pos.y + shakeY - 88;
 
     if (isSelected) {
         ctx.strokeStyle = "rgba(255, 229, 118, 0.95)";
@@ -1068,18 +1255,10 @@ function drawMonster(monster) {
         ctx.stroke();
     }
 
-    ctx.fillStyle = "rgba(8, 16, 6, 0.76)";
-    ctx.fillRect(pos.x - 42, pos.y - 54, 84, 10);
-    const hpRate = gameState.battle && gameState.battle.monsterId === monster.uid
-        ? clamp(gameState.battle.hp / monster.hpMax, 0, 1)
-        : 1;
-    ctx.fillStyle = "#ff9a62";
-    ctx.fillRect(pos.x - 42, pos.y - 54, 84 * hpRate, 10);
-
     ctx.fillStyle = "#f4e27f";
     ctx.font = "12px 'Noto Sans JP', sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(starsText(monster.star), pos.x, pos.y - 60);
+    ctx.fillText(starsText(monster.star), pos.x, spriteTopY - 10);
 }
 
 function drawPlayer() {
@@ -1091,12 +1270,7 @@ function drawPlayer() {
 
     const bob = Math.sin(gameState.time * 8) * 1.6;
     const shakeX = battle && battle.playerAnim > 0 ? randomRange(-2, 2) : 0;
-    let playerSprite = "playerFront";
-    if (Math.abs(player.dirX) > Math.abs(player.dirY)) {
-        playerSprite = player.dirX >= 0 ? "playerRight" : "playerLeft";
-    } else {
-        playerSprite = player.dirY < 0 ? "playerBack" : "playerFront";
-    }
+    const playerSprite = getPlayerSpriteKey();
     drawSprite(playerSprite, pos.x + shakeX, pos.y + bob, 82, 94);
 
     ctx.strokeStyle = "rgba(185, 246, 143, 0.9)";
@@ -1189,6 +1363,39 @@ function drawEncounterEffect() {
     ctx.fillText("ENCOUNTER!", center.x, center.y - 4);
 }
 
+function drawVictoryEffect() {
+    const battle = gameState.battle;
+    if (!battle || battle.phase !== BATTLE_PHASE.RESULT) {
+        return;
+    }
+
+    const monster = findMonster(battle.monsterId);
+    if (!monster) {
+        return;
+    }
+
+    const progress = clamp(battle.phaseTime / (battle.resultDuration || 1.2), 0, 1);
+    const pos = worldToScreen(monster.x, monster.y - 24);
+    const ring = 44 + progress * 116;
+    const alpha = 1 - progress;
+
+    ctx.strokeStyle = `rgba(255, 233, 152, ${0.9 * alpha})`;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, ring, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = `rgba(255, 248, 205, ${0.92 * alpha})`;
+    ctx.font = "bold 24px 'Orbitron', 'Noto Sans JP', sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("HUNT SUCCESS", pos.x, pos.y - 76);
+
+    ctx.font = "bold 16px 'Noto Sans JP', sans-serif";
+    ctx.fillStyle = `rgba(231, 255, 188, ${0.9 * alpha})`;
+    ctx.fillText("討伐成功", pos.x, pos.y - 52);
+}
+
 function drawCinematicBars() {
     if (!gameState.battle) {
         return;
@@ -1231,6 +1438,7 @@ function drawField() {
     drawEffects();
     drawBattleHandTags();
     drawEncounterEffect();
+    drawVictoryEffect();
     ctx.restore();
 
     drawCinematicBars();
@@ -1259,14 +1467,18 @@ function renderBattle() {
     }
 
     ui.target.classList.remove("idle");
-    ui.battleTimer.textContent = `残り ${Math.max(0, Math.ceil(battle.timer))} 秒`;
+    ui.battleTimer.textContent = "決着まで継続";
     ui.targetName.textContent = `${selected.base.name} (${starsText(selected.star)})`;
     const turnLabel = battle.phase === BATTLE_PHASE.ENCOUNTER
         ? "会敵演出中"
-        : (battle.turnCooldown > 0 ? `次の手まで ${battle.turnCooldown.toFixed(1)}s` : "手を選択");
-    const handLabel = battle.lastPlayerHand
-        ? `前手: ${RPS_LABEL[battle.lastPlayerHand]} / ${RPS_LABEL[battle.lastMonsterHand]}`
-        : "初手を選択";
+        : battle.phase === BATTLE_PHASE.RESULT
+            ? "討伐演出中"
+            : (battle.turnCooldown > 0 ? `次の手まで ${battle.turnCooldown.toFixed(1)}s` : "手を選択");
+    const handLabel = battle.phase === BATTLE_PHASE.RESULT
+        ? "報酬計算中"
+        : battle.lastPlayerHand
+            ? `前手: ${RPS_LABEL[battle.lastPlayerHand]} / ${RPS_LABEL[battle.lastMonsterHand]}`
+            : "初手を選択";
     ui.targetDetail.textContent = `Round ${battle.round} | ${turnLabel} | ${handLabel}`;
 
     const hpRate = clamp((battle.hp / selected.hpMax) * 100, 0, 100);
@@ -1276,22 +1488,50 @@ function renderBattle() {
 
 function renderFieldRps() {
     const battle = gameState.battle;
-    if (!battle) {
-        ui.fieldRpsOverlay.classList.add("hidden");
+    const player = gameState.player;
+    const selected = getSelectedMonster();
+
+    ui.fieldRpsOverlay.classList.add("hidden");
+
+    if (!battle || !selected) {
         ui.fieldPlayerHand.textContent = "--";
         ui.fieldMonsterHand.textContent = "--";
         ui.fieldRpsRound.textContent = "0";
+        ui.battleTopOverlay.classList.add("hidden");
+        ui.battleBottomOverlay.classList.add("hidden");
         return;
     }
 
-    ui.fieldRpsOverlay.classList.remove("hidden");
-    ui.fieldPlayerHand.textContent = battle.lastPlayerHand
-        ? RPS_LABEL[battle.lastPlayerHand]
-        : (battle.phase === BATTLE_PHASE.ENCOUNTER ? "構え" : "待機");
-    ui.fieldMonsterHand.textContent = battle.lastMonsterHand
-        ? RPS_LABEL[battle.lastMonsterHand]
-        : (battle.phase === BATTLE_PHASE.ENCOUNTER ? "構え" : "待機");
+    const monsterHpRate = clamp((battle.hp / selected.hpMax) * 100, 0, 100);
+    const playerHpRate = clamp((player.hp / player.maxHp) * 100, 0, 100);
+    const playerHandLabel = getHandLabel(battle.lastPlayerHand, battle.phase);
+    const monsterHandLabel = getHandLabel(battle.lastMonsterHand, battle.phase);
+
+    ui.fieldPlayerHand.textContent = playerHandLabel;
+    ui.fieldMonsterHand.textContent = monsterHandLabel;
     ui.fieldRpsRound.textContent = String(battle.round);
+
+    ui.battleTopOverlay.classList.remove("hidden");
+    ui.battleBottomOverlay.classList.remove("hidden");
+
+    ui.battleTopName.textContent = `${selected.base.name} (${starsText(selected.star)})`;
+    ui.battleTopRound.textContent = `Round ${battle.round}`;
+    ui.battleTopHand.textContent = monsterHandLabel;
+    ui.battleTopHpBar.style.width = `${monsterHpRate}%`;
+    ui.battleTopHpText.textContent = `${Math.max(0, Math.ceil(battle.hp))} / ${selected.hpMax}`;
+    if (ui.battleTopAvatar.getAttribute("src") !== selected.base.sprite) {
+        ui.battleTopAvatar.setAttribute("src", selected.base.sprite);
+    }
+
+    const playerSpriteSrc = spriteSources[getPlayerSpriteKey()];
+    if (ui.battleBottomAvatar.getAttribute("src") !== playerSpriteSrc) {
+        ui.battleBottomAvatar.setAttribute("src", playerSpriteSrc);
+    }
+    ui.battleBottomName.textContent = "あなた";
+    ui.battleBottomRank.textContent = `Lv.${player.rank}`;
+    ui.battleBottomHand.textContent = playerHandLabel;
+    ui.battleBottomHpBar.style.width = `${playerHpRate}%`;
+    ui.battleBottomHpText.textContent = `${Math.max(0, Math.ceil(player.hp))} / ${player.maxHp}`;
 }
 
 function renderPlayerStatus() {
@@ -1370,6 +1610,7 @@ function renderActions() {
 }
 
 function renderAll() {
+    document.body.classList.toggle("battle-active", Boolean(gameState.battle));
     updateCamera();
     drawField();
     renderBattle();
@@ -1636,14 +1877,20 @@ function resizeCanvas() {
     renderAll();
 }
 
-window.addEventListener("resize", resizeCanvas);
+function applyInputModeClass() {
+    const isMobileViewport = window.matchMedia("(max-width: 900px)").matches;
+    const useTouchLayout = (IS_TOUCH_DEVICE || IS_MOBILE_UA) && isMobileViewport;
+    document.body.classList.toggle("input-touch", useTouchLayout);
+    document.body.classList.toggle("input-desktop", !useTouchLayout);
+}
+
+window.addEventListener("resize", () => {
+    applyInputModeClass();
+    resizeCanvas();
+});
 window.addEventListener("beforeunload", stopGeolocationTracking);
 
-if (IS_TOUCH_DEVICE) {
-    document.body.classList.add("input-touch");
-} else {
-    document.body.classList.add("input-desktop");
-}
+applyInputModeClass();
 
 createWorldObjects();
 for (let i = 0; i < 6; i += 1) {

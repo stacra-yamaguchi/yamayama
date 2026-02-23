@@ -1,5 +1,20 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
+const playerSprites = {
+    front: new Image(),
+    left: new Image(),
+    right: new Image()
+};
+const playerSpriteReady = {
+    front: false,
+    left: false,
+    right: false
+};
+const playerSpriteOpaqueBounds = {
+    front: null,
+    left: null,
+    right: null
+};
 
 const ui = {
     stage: document.getElementById("stage"),
@@ -50,6 +65,22 @@ const TOUCH_DEVICE = window.matchMedia("(pointer: coarse)").matches
     || "ontouchstart" in window
     || navigator.maxTouchPoints > 0;
 
+Object.entries({
+    front: "images/player-front.png",
+    left: "images/player-left.png",
+    right: "images/player-right.png"
+}).forEach(([direction, src]) => {
+    playerSprites[direction].src = src;
+    playerSprites[direction].addEventListener("load", () => {
+        playerSpriteReady[direction] = true;
+        analyzeSpriteOpaqueBounds(direction);
+    });
+    playerSprites[direction].addEventListener("error", () => {
+        playerSpriteReady[direction] = false;
+        playerSpriteOpaqueBounds[direction] = null;
+    });
+});
+
 function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
 }
@@ -60,6 +91,58 @@ function randomRange(min, max) {
 
 function stageBlockCount(stage) {
     return CONFIG.stage.initialBlocks + (stage - 1) * CONFIG.stage.increasePerStage;
+}
+
+function analyzeSpriteOpaqueBounds(direction) {
+    const image = playerSprites[direction];
+    if (!image.naturalWidth || !image.naturalHeight) {
+        playerSpriteOpaqueBounds[direction] = null;
+        return;
+    }
+
+    const offscreen = document.createElement("canvas");
+    offscreen.width = image.naturalWidth;
+    offscreen.height = image.naturalHeight;
+    const offCtx = offscreen.getContext("2d", { willReadFrequently: true });
+
+    if (!offCtx) {
+        playerSpriteOpaqueBounds[direction] = null;
+        return;
+    }
+
+    offCtx.clearRect(0, 0, offscreen.width, offscreen.height);
+    offCtx.drawImage(image, 0, 0);
+
+    const { data, width, height } = offCtx.getImageData(0, 0, offscreen.width, offscreen.height);
+    let minX = width;
+    let minY = height;
+    let maxX = -1;
+    let maxY = -1;
+
+    for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+            const alpha = data[(y * width + x) * 4 + 3];
+            if (alpha <= 10) {
+                continue;
+            }
+            if (x < minX) minX = x;
+            if (y < minY) minY = y;
+            if (x > maxX) maxX = x;
+            if (y > maxY) maxY = y;
+        }
+    }
+
+    if (maxX < 0 || maxY < 0) {
+        playerSpriteOpaqueBounds[direction] = { left: 0, top: 0, right: 1, bottom: 1 };
+        return;
+    }
+
+    playerSpriteOpaqueBounds[direction] = {
+        left: minX / width,
+        top: minY / height,
+        right: (maxX + 1) / width,
+        bottom: (maxY + 1) / height
+    };
 }
 
 function getPaddleWidth() {
@@ -98,6 +181,7 @@ function resizeCanvas() {
     gameState.paddle.speed = getPaddleSpeed();
     gameState.paddle.x = clamp(gameState.paddle.x * scaleX, 0, canvas.width - paddleWidth);
     gameState.paddle.y = getPaddleY();
+    gameState.paddle.lastX = gameState.paddle.x;
 
     gameState.balls.forEach((ball) => {
         ball.x = clamp(ball.x * scaleX, ball.radius, canvas.width - ball.radius);
@@ -195,6 +279,8 @@ function startNewGame() {
             width: paddleWidth,
             height: CONFIG.paddle.height,
             speed: getPaddleSpeed(),
+            direction: "front",
+            lastX: canvas.width / 2 - paddleWidth / 2,
             vx: 0
         },
         balls: [createBall(canvas.width / 2, canvas.height - 70, CONFIG.ball.speed)],
@@ -220,6 +306,8 @@ function startNextStage() {
     gameState.paddle.speed = getPaddleSpeed();
     gameState.paddle.x = canvas.width / 2 - gameState.paddle.width / 2;
     gameState.paddle.y = getPaddleY();
+    gameState.paddle.direction = "front";
+    gameState.paddle.lastX = gameState.paddle.x;
     gameState.balls = [createBall(canvas.width / 2, canvas.height - 70, CONFIG.ball.speed)];
     gameState.slowUntil = 0;
     gameState.pierceUntil = 0;
@@ -331,15 +419,17 @@ function applyPierceItem(now) {
 }
 
 function updateItems(now) {
+    const playerHitbox = getPlayerHitbox();
+
     for (let i = gameState.items.length - 1; i >= 0; i -= 1) {
         const item = gameState.items[i];
         item.y += item.vy;
 
         if (
-            item.x + item.size >= gameState.paddle.x &&
-            item.x - item.size <= gameState.paddle.x + gameState.paddle.width &&
-            item.y + item.size >= gameState.paddle.y &&
-            item.y - item.size <= gameState.paddle.y + gameState.paddle.height
+            item.x + item.size >= playerHitbox.x &&
+            item.x - item.size <= playerHitbox.x + playerHitbox.width &&
+            item.y + item.size >= playerHitbox.y &&
+            item.y - item.size <= playerHitbox.y + playerHitbox.height
         ) {
             if (item.type === "slow") {
                 applySlowItem(now);
@@ -371,17 +461,88 @@ function updatePaddle() {
 
     gameState.paddle.x += gameState.paddle.vx;
     gameState.paddle.x = clamp(gameState.paddle.x, 0, canvas.width - gameState.paddle.width);
+    const deltaX = gameState.paddle.x - gameState.paddle.lastX;
+    if (deltaX > 0.35) {
+        gameState.paddle.direction = "right";
+    } else if (deltaX < -0.35) {
+        gameState.paddle.direction = "left";
+    } else {
+        gameState.paddle.direction = "front";
+    }
+    gameState.paddle.lastX = gameState.paddle.x;
+}
+
+function getCurrentSpriteKey() {
+    const direction = gameState?.paddle?.direction || "front";
+    if (playerSpriteReady[direction]) {
+        return direction;
+    }
+    if (playerSpriteReady.front) {
+        return "front";
+    }
+    if (playerSpriteReady.right) {
+        return "right";
+    }
+    if (playerSpriteReady.left) {
+        return "left";
+    }
+    return null;
+}
+
+function getCurrentPlayerSprite() {
+    const key = getCurrentSpriteKey();
+    return key ? playerSprites[key] : null;
+}
+
+function getPlayerSpriteRect(spriteKey = getCurrentSpriteKey()) {
+    const currentSprite = spriteKey ? playerSprites[spriteKey] : null;
+    const aspect = (currentSprite && currentSprite.naturalHeight && currentSprite.naturalWidth)
+        ? (currentSprite.naturalHeight / currentSprite.naturalWidth)
+        : 1.5;
+    const width = clamp(gameState.paddle.width * 0.9, 110, 190);
+    const height = width * aspect;
+    const x = gameState.paddle.x + (gameState.paddle.width - width) / 2;
+    const y = gameState.paddle.y - height + gameState.paddle.height + 2;
+    return { x, y, width, height };
+}
+
+function getPlayerHitbox() {
+    const spriteKey = getCurrentSpriteKey();
+    if (!spriteKey) {
+        return {
+            x: gameState.paddle.x,
+            y: gameState.paddle.y,
+            width: gameState.paddle.width,
+            height: gameState.paddle.height
+        };
+    }
+
+    const spriteRect = getPlayerSpriteRect(spriteKey);
+    const opaque = playerSpriteOpaqueBounds[spriteKey];
+
+    if (!opaque) {
+        return spriteRect;
+    }
+
+    const x = spriteRect.x + spriteRect.width * opaque.left;
+    const y = spriteRect.y + spriteRect.height * opaque.top;
+    const width = Math.max(1, spriteRect.width * (opaque.right - opaque.left));
+    const height = Math.max(1, spriteRect.height * (opaque.bottom - opaque.top));
+
+    return { x, y, width, height };
 }
 
 function handlePaddleCollision(ball) {
+    const hitbox = getPlayerHitbox();
+
     if (
-        ball.x + ball.radius >= gameState.paddle.x &&
-        ball.x - ball.radius <= gameState.paddle.x + gameState.paddle.width &&
-        ball.y + ball.radius >= gameState.paddle.y &&
-        ball.y - ball.radius <= gameState.paddle.y + gameState.paddle.height &&
+        ball.x + ball.radius >= hitbox.x &&
+        ball.x - ball.radius <= hitbox.x + hitbox.width &&
+        ball.y + ball.radius >= hitbox.y &&
+        ball.y - ball.radius <= hitbox.y + hitbox.height &&
         ball.vy > 0
     ) {
-        const hitRatio = ((ball.x - gameState.paddle.x) / gameState.paddle.width) * 2 - 1;
+        const hitRatio = ((ball.x - hitbox.x) / hitbox.width) * 2 - 1;
         const clampedRatio = clamp(hitRatio, -1, 1);
         const speed = Math.hypot(ball.vx, ball.vy);
 
@@ -492,6 +653,8 @@ function updateBalls(now) {
         gameState.paddle.speed = getPaddleSpeed();
         gameState.paddle.x = canvas.width / 2 - gameState.paddle.width / 2;
         gameState.paddle.y = getPaddleY();
+        gameState.paddle.direction = "front";
+        gameState.paddle.lastX = gameState.paddle.x;
     }
 }
 
@@ -530,6 +693,19 @@ function drawBackground() {
 }
 
 function drawPaddle() {
+    const currentSprite = getCurrentPlayerSprite();
+
+    if (currentSprite) {
+        const sprite = getPlayerSpriteRect();
+
+        ctx.save();
+        ctx.shadowColor = "rgba(123, 218, 255, 0.72)";
+        ctx.shadowBlur = 12;
+        ctx.drawImage(currentSprite, sprite.x, sprite.y, sprite.width, sprite.height);
+        ctx.restore();
+        return;
+    }
+
     ctx.save();
     ctx.shadowColor = "rgba(123, 218, 255, 0.88)";
     ctx.shadowBlur = 16;

@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Noto+Sans+JP:wght@400;600;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=1.9.1">
+    <link rel="stylesheet" href="style.css?v=1.10.6">
 </head>
 
 <body>
@@ -30,8 +30,8 @@
                 <h1>HUNTER FIELD NOW</h1>
             </div>
             <div class="meta-box">
-                <span>Version 1.9.1</span>
-                <span>Last Updated: 2026-02-23 13:50 JST</span>
+                <span>Version 1.10.6</span>
+                <span>Last Updated: 2026-02-23 15:00 JST</span>
             </div>
         </header>
 
@@ -95,6 +95,36 @@
                             </div>
                         </div>
                     </div>
+                    <div id="battle-top-overlay" class="battle-scene-overlay battle-scene-top hidden" aria-live="polite">
+                        <div class="battle-scene-main">
+                            <img id="battle-top-avatar" class="battle-scene-avatar enemy" src="images/monster_fang_raptor.png"
+                                alt="モンスター">
+                            <div class="battle-scene-info">
+                                <div class="battle-scene-head">
+                                    <p id="battle-top-name">モンスター</p>
+                                    <p id="battle-top-round">Round 0</p>
+                                </div>
+                                <p class="battle-scene-hand">手: <strong id="battle-top-hand">--</strong></p>
+                                <div class="battle-scene-bar enemy"><span id="battle-top-hp-bar"></span></div>
+                                <p class="battle-scene-hp" id="battle-top-hp-text">-- / --</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="battle-bottom-overlay" class="battle-scene-overlay battle-scene-bottom hidden" aria-live="polite">
+                        <div class="battle-scene-main">
+                            <img id="battle-bottom-avatar" class="battle-scene-avatar player" src="images/player_hunter_front.png"
+                                alt="プレイヤー">
+                            <div class="battle-scene-info">
+                                <div class="battle-scene-head">
+                                    <p id="battle-bottom-name">あなた</p>
+                                    <p id="battle-bottom-rank">Lv.1</p>
+                                </div>
+                                <p class="battle-scene-hand">手: <strong id="battle-bottom-hand">--</strong></p>
+                                <div class="battle-scene-bar player"><span id="battle-bottom-hp-bar"></span></div>
+                                <p class="battle-scene-hp" id="battle-bottom-hp-text">-- / --</p>
+                            </div>
+                        </div>
+                    </div>
                     <div id="field-rps-overlay" class="rps-overlay hidden" aria-live="polite">
                         <p class="rps-title">じゃんけん手札</p>
                         <p class="rps-line">あなた <strong id="field-player-hand">--</strong></p>
@@ -102,7 +132,7 @@
                         <p class="rps-round">Round <span id="field-rps-round">0</span></p>
                     </div>
                     <div class="map-overlay">
-                        <p id="map-hint">接触で自動バトル開始。回復アイテムは拾うと即回復。</p>
+                        <p id="map-hint">タップ移動/フリック移動。接触で自動バトル開始。</p>
                         <p id="selected-distance">ターゲット: なし</p>
                     </div>
                 </div>
@@ -158,7 +188,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.9.1"></script>
+    <script src="script.js?v=1.10.6"></script>
 </body>
 
 </html>

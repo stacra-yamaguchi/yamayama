@@ -123,9 +123,11 @@ function createScanState(durationMs = 5000) {
     return {
         active: false,
         finalizing: false,
+        hasLockedTarget: false,
         durationMs,
         startAt: 0,
         endAt: 0,
+        hardEndAt: 0,
         ticker: null,
         sampleCount: 0,
         weightSum: 0,
@@ -297,7 +299,18 @@ function startScanTicker() {
         }
 
         const now = performance.now();
-        const remainingMs = Math.max(0, state.scan.endAt - now);
+
+        if (!state.scan.hasLockedTarget) {
+            if (now >= state.scan.hardEndAt) {
+                finalizeScan('timeout');
+                return;
+            }
+            setCountdown('対象を検出中...');
+            setScanProgress(0);
+            return;
+        }
+
+        const remainingMs = Math.max(0, Math.min(state.scan.endAt, state.scan.hardEndAt) - now);
         const progress = (state.scan.durationMs - remainingMs) / Math.max(1, state.scan.durationMs);
         setCountdown(`残り ${(remainingMs / 1000).toFixed(1)} 秒`);
         setScanProgress(progress);
@@ -329,7 +342,7 @@ async function startTimedScan() {
     state.scan = createScanState(durationMs);
     state.scan.active = true;
     state.scan.startAt = performance.now();
-    state.scan.endAt = state.scan.startAt + durationMs;
+    state.scan.hardEndAt = state.scan.startAt + durationMs + 2200;
 
     try {
         const preset = getCameraPreset();
@@ -351,8 +364,8 @@ async function startTimedScan() {
 
         setCameraVisibility(true);
         startScanTicker();
-        setStatus('スキャン中... 人物を画面中央に収めてください。');
-        setCountdown(`残り ${(durationMs / 1000).toFixed(1)} 秒`);
+        setStatus('カメラ起動完了。人物を検出中です。');
+        setCountdown('対象を検出中...');
         setScanProgress(0);
         updateActionButtons();
     } catch (error) {
@@ -417,8 +430,11 @@ function onPoseResults(results) {
 
     drawBaseFrame(results);
 
-    if (!results.poseLandmarks || !results.segmentationMask) {
+    if (!results.poseLandmarks) {
         decayUi();
+        if (state.scan.active) {
+            setStatus('人物を検出中...');
+        }
         return;
     }
 
@@ -429,7 +445,7 @@ function onPoseResults(results) {
 
     if (state.scan.active && metrics.valid) {
         collectScanSample(metrics, image);
-        if (now >= state.scan.endAt) {
+        if (state.scan.hasLockedTarget && now >= Math.min(state.scan.endAt || Infinity, state.scan.hardEndAt || Infinity)) {
             finalizeScan('timeout');
         }
     }
@@ -479,6 +495,10 @@ function drawScanLines(ctx, w, h, time) {
 }
 
 function extractMetrics(results, now) {
+    if (!results.segmentationMask) {
+        return extractMetricsFromLandmarks(results.poseLandmarks, now);
+    }
+
     const { frameCtx, maskCtx, width, height } = state.analysis;
 
     frameCtx.drawImage(results.image, 0, 0, width, height);
@@ -516,7 +536,7 @@ function extractMetrics(results, now) {
         gray[i] = (0.299 * r + 0.587 * g + 0.114 * b) | 0;
 
         const maskValue = Math.max(mask[i4], mask[i4 + 3]);
-        if (maskValue < 120) {
+        if (maskValue < 72) {
             continue;
         }
 
@@ -543,10 +563,7 @@ function extractMetrics(results, now) {
     }
 
     if (fgCount < 40 || maxX <= minX || maxY <= minY) {
-        return {
-            valid: false,
-            confidence: 0,
-        };
+        return extractMetricsFromLandmarks(results.poseLandmarks, now);
     }
 
     const areaRatio = fgCount / Math.max(1, totalPixels);
@@ -650,6 +667,139 @@ function extractMetrics(results, now) {
             hu1,
             hu2,
             hu3,
+        },
+    };
+}
+
+function pairSymmetryScore(left, right, centerX) {
+    if (!isVisible(left, 0.2) || !isVisible(right, 0.2)) {
+        return 0.5;
+    }
+    const pairCenter = (left.x + right.x) * 0.5;
+    const centerOffset = Math.abs(pairCenter - centerX);
+    const verticalDiff = Math.abs(left.y - right.y);
+    const span = Math.max(0.05, Math.abs(right.x - left.x));
+
+    return clamp(1 - ((centerOffset * 1.8 + verticalDiff * 0.9) / (span + 0.08)), 0, 1);
+}
+
+function extractMetricsFromLandmarks(landmarks, now) {
+    if (!landmarks || landmarks.length === 0) {
+        return { valid: false, confidence: 0 };
+    }
+
+    const visiblePoints = landmarks.filter((lm) => isVisible(lm, 0.2));
+    if (visiblePoints.length < 6) {
+        return { valid: false, confidence: 0 };
+    }
+
+    let minX = 1;
+    let minY = 1;
+    let maxX = 0;
+    let maxY = 0;
+    for (const lm of visiblePoints) {
+        minX = Math.min(minX, lm.x);
+        minY = Math.min(minY, lm.y);
+        maxX = Math.max(maxX, lm.x);
+        maxY = Math.max(maxY, lm.y);
+    }
+
+    const bboxW = clamp(maxX - minX, 0.06, 1);
+    const bboxH = clamp(maxY - minY, 0.1, 1);
+
+    const leftShoulder = getLandmark(landmarks, LANDMARKS.LEFT_SHOULDER);
+    const rightShoulder = getLandmark(landmarks, LANDMARKS.RIGHT_SHOULDER);
+    const leftHip = getLandmark(landmarks, LANDMARKS.LEFT_HIP);
+    const rightHip = getLandmark(landmarks, LANDMARKS.RIGHT_HIP);
+    const leftWrist = getLandmark(landmarks, LANDMARKS.LEFT_WRIST);
+    const rightWrist = getLandmark(landmarks, LANDMARKS.RIGHT_WRIST);
+    const leftEar = getLandmark(landmarks, LANDMARKS.LEFT_EAR);
+    const rightEar = getLandmark(landmarks, LANDMARKS.RIGHT_EAR);
+    const nose = getLandmark(landmarks, LANDMARKS.NOSE);
+
+    const centerX = isVisible(leftShoulder, 0.15) && isVisible(rightShoulder, 0.15)
+        ? (leftShoulder.x + rightShoulder.x) * 0.5
+        : (minX + maxX) * 0.5;
+
+    const shoulderSpan = (isVisible(leftShoulder, 0.15) && isVisible(rightShoulder, 0.15))
+        ? Math.abs(rightShoulder.x - leftShoulder.x)
+        : bboxW * 0.45;
+
+    const silhouette = clamp(
+        normalize(bboxH, 0.25, 0.95) * 0.44 +
+        normalize(bboxH / Math.max(0.06, bboxW), 1.0, 3.8) * 0.36 +
+        (1 - normalize(bboxW, 0.18, 0.68)) * 0.2,
+        0,
+        1,
+    );
+
+    const symmetry = clamp(
+        (pairSymmetryScore(leftShoulder, rightShoulder, centerX) * 0.4) +
+        (pairSymmetryScore(leftHip, rightHip, centerX) * 0.35) +
+        (pairSymmetryScore(getLandmark(landmarks, LANDMARKS.LEFT_KNEE), getLandmark(landmarks, LANDMARKS.RIGHT_KNEE), centerX) * 0.25),
+        0,
+        1,
+    );
+
+    const motion = calculateMotion(landmarks, now);
+
+    const earSpan = (isVisible(leftEar, 0.1) && isVisible(rightEar, 0.1))
+        ? Math.abs(rightEar.x - leftEar.x)
+        : shoulderSpan * 0.45;
+    const earTilt = (isVisible(leftEar, 0.1) && isVisible(rightEar, 0.1))
+        ? Math.abs(leftEar.y - rightEar.y)
+        : 0;
+    const noseOffset = isVisible(nose, 0.1)
+        ? Math.abs(nose.x - centerX)
+        : 0;
+
+    const hair = clamp(
+        normalize(earSpan / Math.max(0.06, shoulderSpan), 0.24, 0.95) * 0.42 +
+        normalize(earTilt, 0, 0.12) * 0.26 +
+        normalize(noseOffset, 0, 0.14) * 0.32,
+        0,
+        1,
+    );
+
+    const wristSpread = (isVisible(leftWrist, 0.15) && isVisible(rightWrist, 0.15))
+        ? Math.abs(rightWrist.x - leftWrist.x) / Math.max(0.05, shoulderSpan)
+        : 1;
+
+    const contour = clamp(
+        normalize(bboxH / Math.max(0.06, bboxW), 1.0, 3.8) * 0.5 +
+        normalize(wristSpread, 0.7, 3.0) * 0.3 +
+        normalize(Math.abs((maxY - minY) - bboxH), 0, 0.25) * 0.2,
+        0,
+        1,
+    );
+
+    const confidence = clamp(
+        (avgVisibility(landmarks, RELIABILITY_POINTS) * 0.72) +
+        ((visiblePoints.length / landmarks.length) * 0.28),
+        0,
+        1,
+    );
+
+    return {
+        valid: true,
+        confidence,
+        features: {
+            silhouette,
+            symmetry,
+            motion,
+            hair,
+            contour,
+        },
+        bbox: {
+            x: clamp(minX, 0, 1),
+            y: clamp(minY, 0, 1),
+            w: clamp(bboxW, 0, 1),
+            h: clamp(bboxH, 0, 1),
+        },
+        hu: {
+            hu1: contour,
+            hu2: symmetry * 0.1,
+            hu3: hair * 0.1,
         },
     };
 }
@@ -967,8 +1117,15 @@ function drawCornerRect(ctx, x, y, w, h, size) {
 
 function collectScanSample(metrics, image) {
     const confidence = clamp(metrics.confidence, 0, 1);
-    if (confidence < 0.2) {
+    if (confidence < 0.15) {
         return;
+    }
+
+    if (!state.scan.hasLockedTarget) {
+        state.scan.hasLockedTarget = true;
+        state.scan.startAt = performance.now();
+        state.scan.endAt = state.scan.startAt + state.scan.durationMs;
+        setStatus('対象をロックしました。スキャン中です。');
     }
 
     const weight = 0.35 + confidence;
@@ -1020,7 +1177,7 @@ function captureSnapshot(image, bbox) {
 }
 
 function buildScanResult() {
-    if (state.scan.sampleCount < 3 || state.scan.weightSum <= 0) {
+    if (state.scan.sampleCount < 1 || state.scan.weightSum <= 0) {
         return null;
     }
 
@@ -1207,7 +1364,7 @@ function finalizeScan(reason = 'timeout') {
         addHistoryResult(result);
         setStatus(`スキャン完了: ${result.rarityLabel} / 戦闘力 ${result.power.toLocaleString('ja-JP')}`);
     } else {
-        setStatus('スキャン完了: 人物検出が十分に行えませんでした。');
+        setStatus('スキャン完了: 人物検出が不足しました。明るい場所で再試行してください。');
     }
 
     if (reason === 'manual') {
