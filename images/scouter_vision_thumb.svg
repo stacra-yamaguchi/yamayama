@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-label="Scouter Vision neon HUD illustration">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#051427"/>
+      <stop offset="0.5" stop-color="#08121d"/>
+      <stop offset="1" stop-color="#02070d"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a1929"/>
+      <stop offset="1" stop-color="#030913"/>
+    </linearGradient>
+    <linearGradient id="scan" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#86f8ff" stop-opacity="0"/>
+      <stop offset="0.48" stop-color="#86f8ff" stop-opacity="0.84"/>
+      <stop offset="1" stop-color="#86f8ff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#75f2ff"/>
+      <stop offset="1" stop-color="#ffd680"/>
+    </linearGradient>
+    <radialGradient id="core" cx="0.52" cy="0.52" r="0.36">
+      <stop offset="0" stop-color="#93ecff" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#93ecff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.74" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer>
+        <feFuncA type="table" tableValues="0 0.07"/>
+      </feComponentTransfer>
+    </filter>
+  </defs>
+
+  <rect width="960" height="540" fill="url(#bg)"/>
+  <rect x="24" y="24" width="912" height="492" rx="28" fill="url(#panel)" stroke="#74dcff" stroke-opacity="0.34"/>
+
+  <g opacity="0.18" stroke="#8cecff" stroke-width="2">
+    <path d="M60 112H900"/>
+    <path d="M60 156H900"/>
+    <path d="M60 200H900"/>
+    <path d="M60 244H900"/>
+    <path d="M60 288H900"/>
+    <path d="M60 332H900"/>
+    <path d="M60 376H900"/>
+    <path d="M60 420H900"/>
+  </g>
+
+  <g transform="translate(170 92)">
+    <rect x="0" y="0" width="620" height="344" rx="24" fill="#020913" stroke="#93f0ff" stroke-opacity="0.44"/>
+
+    <path d="M260 70 q46 -56 112 -32 q56 20 78 82 q18 52 -14 102 q-36 60 -106 70 q-68 10 -120 -32 q-56 -44 -56 -112 q0 -46 26 -84 q30 -40 80 -48z" fill="#90dfff" fill-opacity="0.1"/>
+    <path d="M222 254 q20 -74 70 -110 q50 -34 104 -32 q60 2 104 46 q48 46 56 118" fill="none" stroke="#93e0ff" stroke-opacity="0.3" stroke-width="30" stroke-linecap="round"/>
+
+    <rect x="20" y="174" width="580" height="90" fill="url(#scan)"/>
+
+    <g fill="none" stroke="url(#accent)" stroke-width="4" filter="url(#glow)">
+      <path d="M50 52H136"/>
+      <path d="M50 52V138"/>
+      <path d="M570 52H484"/>
+      <path d="M570 52V138"/>
+      <path d="M50 292H136"/>
+      <path d="M50 292V206"/>
+      <path d="M570 292H484"/>
+      <path d="M570 292V206"/>
+    </g>
+
+    <g stroke="#7cf0ff" stroke-width="3" opacity="0.86">
+      <polyline points="404,302 432,286 460,292 488,248 516,262 544,234" fill="none"/>
+      <circle cx="404" cy="302" r="3" fill="#ffd680" stroke="none"/>
+      <circle cx="488" cy="248" r="3" fill="#ffd680" stroke="none"/>
+      <circle cx="544" cy="234" r="3" fill="#ffd680" stroke="none"/>
+    </g>
+
+    <g fill="#9dc9e5" opacity="0.76">
+      <rect x="36" y="36" width="132" height="12" rx="6"/>
+      <rect x="456" y="36" width="132" height="12" rx="6"/>
+      <rect x="36" y="314" width="92" height="10" rx="5"/>
+      <rect x="158" y="314" width="92" height="10" rx="5"/>
+      <rect x="280" y="314" width="92" height="10" rx="5"/>
+      <rect x="402" y="314" width="92" height="10" rx="5"/>
+      <rect x="524" y="314" width="64" height="10" rx="5"/>
+    </g>
+  </g>
+
+  <rect width="960" height="540" fill="url(#core)" opacity="0.58"/>
+
+  <g opacity="0.55" stroke="#8cf2ff" stroke-width="4" stroke-linecap="round">
+    <path d="M808 108 q32 -22 62 0"/>
+    <path d="M838 84 q12 -8 24 0"/>
+    <path d="M780 140 q12 -10 24 0"/>
+  </g>
+
+  <rect width="960" height="540" filter="url(#grain)" opacity="0.32"/>
+  <rect x="24" y="24" width="912" height="492" rx="28" fill="none" stroke="#98ddff" stroke-opacity="0.3"/>
+</svg>

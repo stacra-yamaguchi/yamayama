@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hunter Field Now</title>
+    <meta name="description" content="探索して大型モンスターを狩猟するアクションゲーム">
+    <link rel="icon" href="../favicon.png" type="image/png">
+    <link rel="icon" href="../android-chrome-192x192.png" sizes="192x192" type="image/png">
+    <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+    <meta name="theme-color" content="#18220e">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Noto+Sans+JP:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="background-orb orb-a"></div>
+    <div class="background-orb orb-b"></div>
+
+    <main class="game-shell">
+        <a href="../index.html" class="back-link">← Back to Game Center</a>
+
+        <header class="top-panel">
+            <div>
+                <p class="label">Explore and Hunt</p>
+                <h1>HUNTER FIELD NOW</h1>
+            </div>
+            <div class="meta-box">
+                <span>Version 1.6.2</span>
+                <span>Last Updated: 2026-02-23 12:05 JST</span>
+            </div>
+        </header>
+
+        <section class="status-grid">
+            <article class="status-card param-duplicate">
+                <p class="status-title">ハンター</p>
+                <p class="status-main">HR <span id="hunter-rank">1</span></p>
+                <p class="status-sub">EXP <span id="hunter-exp">0</span> / <span id="hunter-next">100</span></p>
+            </article>
+
+            <article class="status-card param-duplicate">
+                <p class="status-title">体力</p>
+                <div class="bar"><span id="hp-bar"></span></div>
+                <p class="status-sub"><span id="hp-text">100 / 100</span></p>
+            </article>
+
+            <article class="status-card param-duplicate">
+                <p class="status-title">スタミナ</p>
+                <div class="bar stamina"><span id="stamina-bar"></span></div>
+                <p class="status-sub"><span id="stamina-text">100 / 100</span></p>
+            </article>
+
+            <article class="status-card param-duplicate">
+                <p class="status-title">所持</p>
+                <p class="status-main"><span id="material-count">0</span> 素材</p>
+                <p class="status-sub"><span id="zenny-count">0</span> z</p>
+            </article>
+
+            <article class="status-card">
+                <p class="status-title">位置情報</p>
+                <p class="status-sub">GPS: <span id="geo-status">取得待機中</span></p>
+                <p class="status-sub mono">Lat <span id="geo-lat">--</span></p>
+                <p class="status-sub mono">Lng <span id="geo-lng">--</span></p>
+                <p class="status-sub mono">Field <span id="player-coord">X -- / Y --</span></p>
+            </article>
+        </section>
+
+        <section class="arena-grid">
+            <article class="panel field-panel">
+                <div class="panel-head">
+                    <h2>フィールドマップ</h2>
+                    <p>次の湧きまで <span id="spawn-timer">12</span>s</p>
+                </div>
+
+                <div class="map-stage">
+                    <canvas id="field-canvas" width="760" height="420" aria-label="フィールドマップ"></canvas>
+                    <div class="field-hud" aria-live="polite">
+                        <div class="field-hud-top">
+                            <span class="pill">HR <strong id="field-hr">1</strong></span>
+                            <span class="pill">武器 <strong id="field-weapon">1</strong></span>
+                            <span class="pill"><strong id="field-zenny">0</strong> z</span>
+                        </div>
+                        <div class="field-hud-bars">
+                            <div class="hud-bar-item">
+                                <span>HP <strong id="field-hp-text">100/100</strong></span>
+                                <div class="hud-mini-bar"><span id="field-hp-bar"></span></div>
+                            </div>
+                            <div class="hud-bar-item">
+                                <span>ST <strong id="field-stamina-text">100/100</strong></span>
+                                <div class="hud-mini-bar stamina"><span id="field-stamina-bar"></span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="map-overlay">
+                        <p id="map-hint">接触で自動バトル開始。回復アイテムは拾うと即回復。</p>
+                        <p id="selected-distance">ターゲット: なし</p>
+                    </div>
+                </div>
+
+                <div class="map-actions">
+                    <button id="engage-btn" type="button">接敵して狩猟開始</button>
+                </div>
+
+                <div class="touch-pad" aria-label="移動操作">
+                    <button type="button" data-dir="up">↑</button>
+                    <button type="button" data-dir="left">←</button>
+                    <button type="button" data-dir="down">↓</button>
+                    <button type="button" data-dir="right">→</button>
+                </div>
+            </article>
+
+            <article class="panel battle-panel">
+                <div class="panel-head">
+                    <h2>じゃんけん狩猟</h2>
+                    <p id="battle-timer">待機中</p>
+                </div>
+
+                <div id="battle-target" class="battle-target idle">
+                    <p class="target-name" id="target-name">ターゲットなし</p>
+                    <p class="target-sub" id="target-detail">フィールド上のモンスターに接近してください</p>
+                    <div class="bar boss"><span id="monster-hp-bar"></span></div>
+                    <p class="target-sub" id="monster-hp-text">-- / --</p>
+                </div>
+
+                <div class="action-row janken-row">
+                    <button id="rps-rock-btn" type="button">グー</button>
+                    <button id="rps-scissors-btn" type="button">チョキ</button>
+                    <button id="rps-paper-btn" type="button">パー</button>
+                </div>
+
+                <div class="action-row utility">
+                    <button id="upgrade-btn" type="button">武器強化 (素材120 / 500z)</button>
+                </div>
+
+                <div class="log-panel">
+                    <p>バトルログ</p>
+                    <ul id="battle-log"></ul>
+                </div>
+            </article>
+        </section>
+    </main>
+
+    <div id="reward-modal" class="reward-modal hidden" aria-live="polite">
+        <div class="reward-card">
+            <h2 id="reward-title">狩猟成功！</h2>
+            <p id="reward-summary"></p>
+            <button id="reward-close" type="button">次の狩猟へ</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

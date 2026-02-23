@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>バーコードファイター - yamayama</title>
+    <link rel="icon" href="../favicon.png" type="image/png">
+    <link rel="icon" href="../android-chrome-192x192.png" sizes="192x192" type="image/png">
+    <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+    <meta name="theme-color" content="#101114">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <main class="app-shell">
+        <header class="top-header">
+            <h1>バーコードファイター</h1>
+            <p>商品バーコードから、戦士を召喚してリングへ。</p>
+        </header>
+
+        <section class="panel scanner-panel">
+            <h2>1. 2次元バーコードを読み込む</h2>
+            <div class="scanner-grid">
+                <div class="preview-wrap">
+                    <video id="camera" playsinline muted></video>
+                    <div id="camera-placeholder" class="camera-placeholder">カメラ待機中</div>
+                    <canvas id="decode-canvas" width="640" height="480" aria-hidden="true"></canvas>
+                </div>
+                <div class="scanner-controls">
+                    <div class="btn-row">
+                        <button id="start-camera" type="button">カメラ開始</button>
+                        <button id="stop-camera" type="button" class="ghost">カメラ停止</button>
+                    </div>
+                    <label class="file-label" for="file-input">画像ファイルから読み取る</label>
+                    <input id="file-input" type="file" accept="image/*">
+                    <label for="manual-input">手動入力（フォールバック）</label>
+                    <textarea id="manual-input" rows="3" placeholder="読み取れない場合はコード文字列を入力"></textarea>
+                    <button id="apply-manual" type="button" class="ghost">入力を使う</button>
+                    <div class="detector-note" id="detector-note"></div>
+                </div>
+            </div>
+            <div class="scan-result">
+                <div><span class="label">読み取り結果:</span> <span id="barcode-value">未取得</span></div>
+                <div><span class="label">商品特性:</span> <span id="feature-summary">-</span></div>
+            </div>
+        </section>
+
+        <section class="panel generator-panel">
+            <h2>2. ファイターを生成</h2>
+            <div class="generator-grid">
+                <article class="fighter-card" id="fighter-card">
+                    <div class="fighter-head">
+                        <h3 id="fighter-name">未生成</h3>
+                        <span id="fighter-rank" class="rank-chip">RANK -</span>
+                    </div>
+                    <p id="fighter-type">タイプ: -</p>
+                    <p id="fighter-ability">特殊能力: -</p>
+                    <div class="stat-list">
+                        <div>戦闘力 <strong id="stat-attack">0</strong></div>
+                        <div>防御力 <strong id="stat-defense">0</strong></div>
+                        <div>機動力 <strong id="stat-agility">0</strong></div>
+                        <div>体力 <strong id="stat-hp">0</strong></div>
+                    </div>
+                    <p class="fighter-desc" id="fighter-desc">バーコードを読み取り後に生成してください。</p>
+                </article>
+                <div class="generator-actions">
+                    <button id="generate-btn" type="button">ファイター生成</button>
+                    <button id="save-btn" type="button" class="ghost">コレクションへ保存</button>
+                    <button id="fight-btn" type="button">このファイターで出撃</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel collection-panel">
+            <h2>3. バーコードコレクション</h2>
+            <p class="collection-sub">保存済みファイターを再選択して、何度でも出撃できます。</p>
+            <div id="collection-list" class="collection-list"></div>
+        </section>
+
+        <section class="panel battle-panel">
+            <h2>4. バトルアリーナ</h2>
+            <div class="hud">
+                <div class="hp-group">
+                    <span id="player-hud-name">PLAYER</span>
+                    <div class="hp-bar"><span id="player-hp-fill"></span></div>
+                </div>
+                <div class="hp-group enemy">
+                    <span id="enemy-hud-name">ENEMY</span>
+                    <div class="hp-bar"><span id="enemy-hp-fill"></span></div>
+                </div>
+            </div>
+            <div class="battle-stage">
+                <canvas id="battle-canvas" width="960" height="420" aria-label="バトル画面"></canvas>
+                <div id="battle-overlay" class="battle-overlay" aria-live="polite">
+                    <div id="battle-main-text" class="battle-main-text"></div>
+                    <div id="battle-sub-text" class="battle-sub-text"></div>
+                </div>
+                <div id="battle-winner-banner" class="battle-winner-banner">
+                    <span class="winner-label">WINNER</span>
+                    <strong id="battle-winner-name">-</strong>
+                    <span id="battle-winner-side" class="winner-side">YOU WIN</span>
+                </div>
+            </div>
+            <div class="controls-info">
+                <p>PC操作: <strong>A/D</strong> 移動, <strong>W</strong> ジャンプ, <strong>J</strong> パンチ, <strong>K</strong> キック, <strong>L</strong> 必殺技</p>
+            </div>
+            <div class="mobile-controls" aria-label="モバイル操作">
+                <div class="gesture-zone move-zone" id="move-zone">
+                    <strong>MOVE</strong>
+                    <span>左右ドラッグ: 移動</span>
+                    <span>上フリック: ジャンプ</span>
+                </div>
+                <div class="gesture-zone action-zone" id="action-zone">
+                    <strong>ACTION</strong>
+                    <span>タップ: パンチ</span>
+                    <span>ダブルタップ: キック / 上フリック: 必殺</span>
+                </div>
+                <div class="mobile-quick-actions">
+                    <button data-key="KeyJ" type="button" aria-label="パンチ">P</button>
+                    <button data-key="KeyK" type="button" aria-label="キック">K</button>
+                    <button data-key="KeyL" type="button" aria-label="必殺技">SP</button>
+                </div>
+            </div>
+            <p id="battle-log" class="battle-log">出撃を待機しています。</p>
+        </section>
+
+        <footer class="meta-footer">
+            <div class="game-meta">
+                <span>Version 1.2.0</span>
+                <span>Last Updated: 2026-02-23 11:20 JST</span>
+            </div>
+            <a href="../index.html" class="back-link">← Back to Game Center</a>
+        </footer>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>

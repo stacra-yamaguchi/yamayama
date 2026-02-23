@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="180" viewBox="0 0 220 180" role="img" aria-label="storm wyvern">
+  <ellipse cx="112" cy="156" rx="50" ry="11" fill="#1a2332" fill-opacity="0.42"/>
+  <path d="M44 108 C44 74 74 56 112 56 C150 56 176 76 174 110 C172 132 150 142 112 142 C74 142 44 132 44 108 Z" fill="#476a8e"/>
+  <path d="M112 68 L130 40 L132 66 Z" fill="#89b6dd"/>
+  <path d="M92 68 L74 42 L72 68 Z" fill="#89b6dd"/>
+  <path d="M68 72 L34 82 L64 94 Z" fill="#3d5f82"/>
+  <path d="M154 72 L186 84 L156 94 Z" fill="#3d5f82"/>
+  <circle cx="92" cy="96" r="4" fill="#101823"/>
+  <circle cx="128" cy="96" r="4" fill="#101823"/>
+  <path d="M96 112 Q112 124 128 112" stroke="#d8ecff" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M84 134 L78 154 L92 154 L96 136 Z" fill="#2f4f70"/>
+  <path d="M126 134 L120 154 L134 154 L138 136 Z" fill="#2f4f70"/>
+</svg>

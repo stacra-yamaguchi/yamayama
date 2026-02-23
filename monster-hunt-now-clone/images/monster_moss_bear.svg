@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="180" viewBox="0 0 200 180" role="img" aria-label="moss bear">
+  <ellipse cx="100" cy="157" rx="46" ry="11" fill="#1f2720" fill-opacity="0.4"/>
+  <path d="M46 88 C50 60 74 50 100 50 C130 50 154 64 156 92 C158 122 136 134 100 134 C64 134 42 120 46 88 Z" fill="#4b6d3c"/>
+  <circle cx="70" cy="60" r="12" fill="#4b6d3c"/>
+  <circle cx="128" cy="60" r="12" fill="#4b6d3c"/>
+  <circle cx="82" cy="83" r="4" fill="#1e281b"/>
+  <circle cx="116" cy="83" r="4" fill="#1e281b"/>
+  <ellipse cx="99" cy="98" rx="16" ry="12" fill="#d2c59a"/>
+  <path d="M90 104 Q99 112 108 104" stroke="#6d5b45" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M68 120 L64 152 L78 152 L82 122 Z" fill="#36512e"/>
+  <path d="M118 120 L114 152 L128 152 L132 122 Z" fill="#36512e"/>
+  <path d="M58 90 C66 76 78 68 92 66" stroke="#96cf70" stroke-width="6" fill="none" stroke-linecap="round"/>
+</svg>

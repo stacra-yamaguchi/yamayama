@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Scouter Vision - yamayama</title>
+    <link rel="icon" href="../favicon.png" type="image/png">
+    <link rel="icon" href="../android-chrome-192x192.png" sizes="192x192" type="image/png">
+    <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+    <meta name="theme-color" content="#0b1017">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=M+PLUS+1p:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <main class="scouter-shell">
+        <header class="hero-card">
+            <p class="eyebrow">ANALYTIC COMBAT HUD</p>
+            <h1>Scouter Vision</h1>
+            <p class="hero-copy">カメラに映る人物の輪郭・姿勢・動作・髪型の複雑度を解析し、戦闘力とレア度をリアルタイム表示します。</p>
+        </header>
+
+        <section class="panel live-panel">
+            <div class="stage-wrap">
+                <video id="camera" playsinline muted></video>
+                <canvas id="hud-canvas" width="1280" height="720" aria-label="スカウタービュー"></canvas>
+                <div id="stage-placeholder" class="stage-placeholder">CAMERA OFFLINE</div>
+            </div>
+            <aside class="control-wrap">
+                <h2>スキャン制御</h2>
+                <div class="controls-grid">
+                    <label for="camera-facing">カメラ向き</label>
+                    <select id="camera-facing">
+                        <option value="user">インカメラ</option>
+                        <option value="environment">アウトカメラ</option>
+                    </select>
+                    <label for="scan-duration">スキャン時間</label>
+                    <select id="scan-duration">
+                        <option value="3">3秒</option>
+                        <option value="5" selected>5秒</option>
+                        <option value="8">8秒</option>
+                        <option value="10">10秒</option>
+                    </select>
+                    <button id="start-camera" type="button">スキャン開始</button>
+                    <button id="stop-camera" type="button" class="ghost">スキャン停止</button>
+                    <button id="reset-baseline" type="button" class="ghost">レア度基準をリセット</button>
+                </div>
+                <div class="scan-progress" aria-hidden="true">
+                    <span id="scan-progress"></span>
+                </div>
+                <p id="countdown" class="countdown">待機中</p>
+                <p id="status" class="status">初期化中...</p>
+                <p class="caution">本アプリはエンタメ用途です。現実の能力・人格・価値を評価するものではありません。</p>
+            </aside>
+        </section>
+
+        <section class="panel result-panel">
+            <article class="result-main">
+                <p class="label">BATTLE POWER</p>
+                <p id="battle-power" class="battle-power">0</p>
+                <p class="label">RARITY</p>
+                <p id="rarity" class="rarity common">COMMON</p>
+                <p id="confidence" class="confidence">認識信頼度: 0%</p>
+                <p id="scan-summary" class="scan-summary">最新スキャン: なし</p>
+            </article>
+            <article class="feature-panel">
+                <h2>特徴量</h2>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <div class="feature-head"><span>輪郭安定性</span><strong id="f-silhouette">0.00</strong></div>
+                        <div class="meter"><span id="m-silhouette"></span></div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-head"><span>左右対称性</span><strong id="f-symmetry">0.00</strong></div>
+                        <div class="meter"><span id="m-symmetry"></span></div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-head"><span>動作強度</span><strong id="f-motion">0.00</strong></div>
+                        <div class="meter"><span id="m-motion"></span></div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-head"><span>髪型複雑度</span><strong id="f-hair">0.00</strong></div>
+                        <div class="meter"><span id="m-hair"></span></div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-head"><span>輪郭不変量</span><strong id="f-contour">0.00</strong></div>
+                        <div class="meter"><span id="m-contour"></span></div>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <section class="panel ascii-panel">
+            <h2>ASCII Portrait</h2>
+            <pre id="ascii-art" class="ascii-art">スキャン完了後に生成されます。</pre>
+        </section>
+
+        <section class="panel history-panel">
+            <h2>保存済み結果 (最大10件)</h2>
+            <p class="history-sub">新しい結果から順に保存します。11件目以降は古い結果から削除されます。</p>
+            <div id="history-list" class="history-list"></div>
+        </section>
+
+        <section class="panel logic-panel">
+            <h2>スコア設計</h2>
+            <p>
+                戦闘力は 5 特徴量の重み付き合成で算出し、レア度は各特徴量のオンライン z-score（セッション内母集団からの希少性）を基準に決定します。
+            </p>
+            <pre>
+Power = 900 + 14500 * (
+  0.24*Motion + 0.22*Silhouette + 0.20*Symmetry +
+  0.18*HairComplexity + 0.16*ContourInvariant
+) * ConfidenceBoost
+
+Rarity = 0.60*mean(|z_i|) + 0.40*(0.5*HairComplexity + 0.5*ContourInvariant)
+            </pre>
+            <ul>
+                <li>輪郭不変量: Hu Moments (η20, η02, η11) の組を利用</li>
+                <li>髪型複雑度: 頭部領域のエッジ密度 + 勾配方向エントロピー</li>
+                <li>動作強度: ランドマーク速度（手首・膝・足首）の正規化平均</li>
+            </ul>
+        </section>
+
+        <section class="panel research-panel">
+            <h2>研究・理論の参照</h2>
+            <ul>
+                <li><a href="https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker/web_js" target="_blank" rel="noopener noreferrer">MediaPipe Pose Landmarker (Web)</a></li>
+                <li><a href="https://arxiv.org/abs/2006.10204" target="_blank" rel="noopener noreferrer">BlazePose: On-device Real-time Body Pose Tracking</a></li>
+                <li><a href="https://ieeexplore.ieee.org/document/1147314" target="_blank" rel="noopener noreferrer">Hu (1962): Visual Pattern Recognition by Moment Invariants</a></li>
+                <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4327057/" target="_blank" rel="noopener noreferrer">Han &amp; Bhanu (2006): Individual Recognition Using Gait Energy Image</a></li>
+                <li><a href="https://www.organism.earth/library/document/mathematical-theory-of-communication" target="_blank" rel="noopener noreferrer">Shannon (1948): A Mathematical Theory of Communication</a></li>
+            </ul>
+        </section>
+
+        <footer class="meta-footer">
+            <div class="game-meta">
+                <span>Version 1.0.2</span>
+                <span>Last Updated: 2026-02-23 11:16 JST</span>
+            </div>
+            <a href="../index.html" class="back-link">← Back to Game Center</a>
+        </footer>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

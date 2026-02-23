@@ -9,15 +9,15 @@ const PATCH_H = 640 / 3;
 
 // 3x3のグリッドに合わせて9種類
 const PLANETS = [
-    { name: 'Moon', radius: 15, score: 2, nextIdx: 1, sprite: { x: 0, y: 0 } },
-    { name: 'Mercury', radius: 24, score: 4, nextIdx: 2, sprite: { x: 1, y: 0 } },
-    { name: 'Venus', radius: 34, score: 8, nextIdx: 3, sprite: { x: 2, y: 0 } },
-    { name: 'Earth', radius: 46, score: 16, nextIdx: 4, sprite: { x: 0, y: 1 } },
-    { name: 'Jupiter', radius: 62, score: 32, nextIdx: 5, sprite: { x: 1, y: 1 } },
-    { name: 'Saturn', radius: 82, score: 64, nextIdx: 6, sprite: { x: 2, y: 1 } },
-    { name: 'Uranus', radius: 106, score: 128, nextIdx: 7, sprite: { x: 0, y: 2 } },
-    { name: 'Neptune', radius: 135, score: 256, nextIdx: 8, sprite: { x: 1, y: 2 } },
-    { name: 'Sun', radius: 170, score: 512, nextIdx: null, sprite: { x: 2, y: 2 } }
+    { name: 'Moon', radius: 13, score: 2, nextIdx: 1, sprite: { x: 0, y: 0 } },
+    { name: 'Mercury', radius: 21, score: 4, nextIdx: 2, sprite: { x: 1, y: 0 } },
+    { name: 'Venus', radius: 30, score: 8, nextIdx: 3, sprite: { x: 2, y: 0 } },
+    { name: 'Earth', radius: 41, score: 16, nextIdx: 4, sprite: { x: 0, y: 1 } },
+    { name: 'Jupiter', radius: 55, score: 32, nextIdx: 5, sprite: { x: 1, y: 1 } },
+    { name: 'Saturn', radius: 73, score: 64, nextIdx: 6, sprite: { x: 2, y: 1 } },
+    { name: 'Uranus', radius: 95, score: 128, nextIdx: 7, sprite: { x: 0, y: 2 } },
+    { name: 'Neptune', radius: 120, score: 256, nextIdx: 8, sprite: { x: 1, y: 2 } },
+    { name: 'Sun', radius: 150, score: 512, nextIdx: null, sprite: { x: 2, y: 2 } }
 ];
 
 // 状態管理
@@ -101,7 +101,7 @@ function init() {
         });
 
         // デッドライン（ガイドライン）の描画
-        const deadlineY = 70;
+        const deadlineY = 25;
         context.save();
         context.setLineDash([5, 5]);
         context.beginPath();
@@ -251,7 +251,7 @@ function spawnPlanet() {
     
     const planetData = PLANETS[nextPlanetIdx];
     const x = canvasWidth / 2;
-    const y = 50;
+    const y = 12;
 
     currentPlanet = Bodies.circle(x, y, planetData.radius, {
         isStatic: true,
@@ -281,7 +281,7 @@ function movePlanet(e) {
     // 画面端の制限（マージンを持たせる）
     x = Math.max(radius + 5, Math.min(canvasWidth - radius - 5, x));
     
-    Body.setPosition(currentPlanet, { x: x, y: 50 });
+    Body.setPosition(currentPlanet, { x: x, y: 12 });
 }
 
 function handleRelease() {
@@ -356,7 +356,7 @@ function checkGameOver() {
     if (isGameOver) return;
     
     const bodies = Composite.allBodies(engine.world);
-    const deadlineY = 70; // ガイドラインと一致させる
+    const deadlineY = 25; // ガイドラインと一致させる
     const currentTime = Date.now();
 
     for (let body of bodies) {

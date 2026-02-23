@@ -1,0 +1,573 @@
+:root {
+    --bg-0: #05080e;
+    --bg-1: #0a111d;
+    --panel: rgba(10, 18, 31, 0.84);
+    --border: rgba(127, 235, 255, 0.26);
+    --text-main: #f2fbff;
+    --text-sub: #a2b8c9;
+    --accent: #77f2ff;
+    --accent-2: #ffd46e;
+    --danger: #ff698b;
+    --good: #88ffba;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+    color: var(--text-main);
+    font-family: 'M PLUS 1p', sans-serif;
+    background:
+        radial-gradient(circle at 15% -12%, rgba(29, 166, 255, 0.35), transparent 40%),
+        radial-gradient(circle at 90% 10%, rgba(255, 212, 110, 0.28), transparent 45%),
+        linear-gradient(175deg, var(--bg-1), var(--bg-0) 60%);
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+
+.scouter-shell {
+    width: min(1180px, 94vw);
+    margin: 24px auto;
+    display: grid;
+    gap: 14px;
+}
+
+.hero-card,
+.panel {
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--panel);
+    box-shadow: 0 18px 38px rgba(0, 0, 0, 0.35);
+}
+
+.hero-card {
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-card::before {
+    content: '';
+    position: absolute;
+    inset: -50% auto auto -20%;
+    width: 360px;
+    height: 360px;
+    background: radial-gradient(circle, rgba(119, 242, 255, 0.2), transparent 68%);
+    pointer-events: none;
+}
+
+.eyebrow {
+    margin: 0;
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    font-size: 0.8rem;
+}
+
+.hero-card h1 {
+    margin: 8px 0 8px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.1rem);
+    letter-spacing: 0.04em;
+}
+
+.hero-copy {
+    margin: 0;
+    color: var(--text-sub);
+    max-width: 70ch;
+    font-size: 0.95rem;
+}
+
+.panel {
+    padding: 16px;
+}
+
+.live-panel {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 14px;
+}
+
+.stage-wrap {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #03060d;
+    aspect-ratio: 16 / 9;
+    min-height: 340px;
+    max-height: min(72svh, 640px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+#camera,
+#hud-canvas,
+.stage-placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+}
+
+#camera {
+    display: none;
+    object-fit: cover;
+}
+
+#hud-canvas {
+    position: absolute;
+    inset: 0;
+    display: none;
+}
+
+.stage-placeholder {
+    display: grid;
+    place-items: center;
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 0.16em;
+    color: #7fa4bf;
+    background:
+        linear-gradient(transparent 97%, rgba(122, 246, 255, 0.16) 100%),
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.03) 1px, transparent 1px, transparent 4px),
+        #040b16;
+}
+
+.control-wrap {
+    display: grid;
+    align-content: start;
+    gap: 12px;
+}
+
+.control-wrap h2,
+.feature-panel h2,
+.logic-panel h2,
+.research-panel h2 {
+    margin: 0;
+    font-size: 1.08rem;
+}
+
+.controls-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+
+label,
+.status,
+.caution {
+    font-size: 0.87rem;
+    color: var(--text-sub);
+}
+
+select,
+button {
+    border-radius: 10px;
+    border: 1px solid rgba(170, 231, 255, 0.3);
+    padding: 10px 12px;
+    font-size: 0.93rem;
+    font-weight: 700;
+    font-family: 'M PLUS 1p', sans-serif;
+    color: #03172d;
+    background: linear-gradient(135deg, var(--accent), #c5fbff);
+    cursor: pointer;
+    transition: transform 0.16s ease, filter 0.16s ease;
+}
+
+select {
+    color: #03121f;
+    font-weight: 500;
+}
+
+button,
+select {
+    min-height: 44px;
+}
+
+button:hover,
+select:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.04);
+}
+
+button.ghost {
+    color: var(--text-main);
+    background: rgba(121, 156, 188, 0.14);
+}
+
+.status {
+    margin: 0;
+    min-height: 20px;
+}
+
+.countdown {
+    margin: 0;
+    font-family: 'Orbitron', sans-serif;
+    color: #d3f8ff;
+    font-size: 0.92rem;
+}
+
+.scan-progress {
+    width: 100%;
+    height: 8px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(102, 142, 177, 0.36);
+}
+
+.scan-progress span {
+    display: block;
+    width: 0%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #77f2ff, #ffd46e, #ff7f9f);
+    transition: width 0.12s linear;
+}
+
+.caution {
+    margin: 0;
+    line-height: 1.7;
+}
+
+.result-panel {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 14px;
+}
+
+.result-main {
+    border-radius: 14px;
+    padding: 16px;
+    border: 1px solid rgba(170, 233, 255, 0.28);
+    background:
+        radial-gradient(circle at 10% 10%, rgba(119, 242, 255, 0.18), transparent 42%),
+        rgba(2, 8, 16, 0.6);
+}
+
+.label {
+    margin: 0;
+    font-family: 'Orbitron', sans-serif;
+    color: #8ab8d8;
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+}
+
+.battle-power {
+    margin: 4px 0 14px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(2rem, 6vw, 3.3rem);
+    line-height: 1;
+    text-shadow: 0 0 14px rgba(119, 242, 255, 0.45);
+}
+
+.rarity {
+    margin: 4px 0 10px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.55rem;
+    letter-spacing: 0.06em;
+}
+
+.rarity.common {
+    color: #d6e4f1;
+}
+
+.rarity.uncommon {
+    color: #9ef7bb;
+}
+
+.rarity.rare {
+    color: #9ec8ff;
+}
+
+.rarity.epic {
+    color: #ffcb6f;
+}
+
+.rarity.legendary {
+    color: #ff7f9f;
+}
+
+.confidence {
+    margin: 0;
+    color: var(--text-sub);
+    font-size: 0.88rem;
+}
+
+.scan-summary {
+    margin: 10px 0 0;
+    color: #c9dcec;
+    font-size: 0.85rem;
+}
+
+.feature-panel {
+    border-radius: 14px;
+    padding: 16px;
+    border: 1px solid rgba(170, 233, 255, 0.22);
+    background: rgba(4, 10, 20, 0.54);
+}
+
+.feature-list {
+    margin-top: 12px;
+    display: grid;
+    gap: 10px;
+}
+
+.feature-item {
+    display: grid;
+    gap: 6px;
+}
+
+.feature-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    color: #cce4f6;
+    font-size: 0.88rem;
+}
+
+.feature-head strong {
+    color: #f3fbff;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.84rem;
+}
+
+.meter {
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(113, 160, 196, 0.3);
+    overflow: hidden;
+}
+
+.meter span {
+    display: block;
+    width: 0%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #77f2ff, #ffd46e);
+    transition: width 0.25s ease;
+}
+
+.logic-panel p {
+    margin: 8px 0 12px;
+    color: var(--text-sub);
+    line-height: 1.8;
+}
+
+.logic-panel pre {
+    margin: 0 0 10px;
+    border-radius: 12px;
+    padding: 12px;
+    overflow-x: auto;
+    background: rgba(3, 12, 23, 0.82);
+    border: 1px solid rgba(170, 233, 255, 0.18);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.78rem;
+    color: #d3f6ff;
+}
+
+.logic-panel ul,
+.research-panel ul {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--text-sub);
+    line-height: 1.75;
+}
+
+.research-panel a {
+    color: #92d7ff;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.ascii-panel h2,
+.history-panel h2 {
+    margin: 0 0 10px;
+    font-size: 1.08rem;
+}
+
+.ascii-art {
+    margin: 0;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(170, 233, 255, 0.2);
+    background: rgba(2, 8, 17, 0.85);
+    color: #b7f6ff;
+    font-family: 'Courier New', Consolas, monospace;
+    font-size: 0.54rem;
+    line-height: 1.03;
+    letter-spacing: 0.02em;
+    overflow: auto;
+    max-height: 380px;
+}
+
+.history-sub {
+    margin: 0 0 10px;
+    color: var(--text-sub);
+    font-size: 0.86rem;
+}
+
+.history-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+}
+
+.history-item {
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(170, 233, 255, 0.2);
+    background: rgba(4, 12, 24, 0.7);
+    display: grid;
+    gap: 8px;
+}
+
+.history-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    align-items: center;
+}
+
+.history-time {
+    color: #bed4e4;
+    font-size: 0.75rem;
+}
+
+.history-rarity {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.72rem;
+    margin: 0;
+}
+
+.history-meta {
+    margin: 0;
+    color: #d6ebfa;
+    font-size: 0.8rem;
+}
+
+.history-ascii {
+    margin: 0;
+    padding: 8px;
+    border-radius: 8px;
+    background: rgba(1, 6, 12, 0.9);
+    color: #b7f6ff;
+    font-family: 'Courier New', Consolas, monospace;
+    font-size: 0.41rem;
+    line-height: 1.02;
+    max-height: 140px;
+    overflow: auto;
+}
+
+.history-empty {
+    margin: 0;
+    color: var(--text-sub);
+    font-size: 0.85rem;
+}
+
+.meta-footer {
+    border: 1px solid rgba(141, 193, 228, 0.24);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    background: rgba(3, 10, 18, 0.58);
+}
+
+.game-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    color: #c9dbeb;
+    font-size: 0.82rem;
+}
+
+.back-link {
+    color: #9ad8ff;
+    font-weight: 700;
+}
+
+@media (max-width: 960px) {
+    .live-panel,
+    .result-panel {
+        grid-template-columns: 1fr;
+    }
+
+    .stage-wrap {
+        aspect-ratio: 4 / 3;
+        min-height: 300px;
+        max-height: 70svh;
+    }
+}
+
+@media (max-width: 560px) {
+    .scouter-shell {
+        width: min(1220px, 96vw);
+        margin: 16px auto;
+    }
+
+    .hero-card,
+    .panel {
+        border-radius: 14px;
+    }
+
+    .hero-card {
+        padding: 18px;
+    }
+
+    .hero-card h1 {
+        font-size: clamp(1.7rem, 10vw, 2.3rem);
+    }
+
+    .hero-copy {
+        font-size: 0.88rem;
+        line-height: 1.7;
+    }
+
+    .stage-wrap {
+        aspect-ratio: 3 / 4;
+        min-height: 260px;
+        max-height: 68svh;
+    }
+
+    .battle-power {
+        font-size: clamp(2rem, 14vw, 2.8rem);
+    }
+
+    .rarity {
+        font-size: 1.3rem;
+    }
+
+    .feature-head {
+        font-size: 0.82rem;
+    }
+
+    .countdown,
+    .status,
+    .caution {
+        font-size: 0.82rem;
+    }
+
+    .ascii-art {
+        font-size: 0.43rem;
+        max-height: 310px;
+    }
+
+    .history-list {
+        grid-template-columns: 1fr;
+    }
+
+    .history-ascii {
+        font-size: 0.38rem;
+    }
+
+    .meta-footer {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

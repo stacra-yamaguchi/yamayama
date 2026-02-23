@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="180" viewBox="0 0 200 180" role="img" aria-label="fang raptor">
+  <ellipse cx="104" cy="156" rx="44" ry="10" fill="#1f2720" fill-opacity="0.4"/>
+  <path d="M46 118 L26 136 L40 138 L60 124 Z" fill="#3c4f37"/>
+  <path d="M142 70 C166 72 178 84 174 100 C168 118 142 126 108 124 C78 122 66 108 72 90 C78 72 112 66 142 70 Z" fill="#5a7f48"/>
+  <path d="M140 74 C156 78 166 88 162 98 C156 112 130 116 106 114" stroke="#9bd66d" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M154 70 L178 56 L170 78 Z" fill="#5a7f48"/>
+  <path d="M167 68 L183 67 L170 78 Z" fill="#435f39"/>
+  <circle cx="156" cy="84" r="3" fill="#1f2a1d"/>
+  <path d="M168 89 L182 92 L166 98 Z" fill="#dcf19e"/>
+  <path d="M96 120 L88 152 L100 152 L107 122 Z" fill="#3f5d35"/>
+  <path d="M124 119 L116 152 L128 152 L134 121 Z" fill="#3f5d35"/>
+</svg>

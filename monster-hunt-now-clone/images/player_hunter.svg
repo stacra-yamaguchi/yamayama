@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180" role="img" aria-label="hunter">
+  <defs>
+    <linearGradient id="armor" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#87d179"/>
+      <stop offset="1" stop-color="#3f7b39"/>
+    </linearGradient>
+    <linearGradient id="blade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#d8edf4"/>
+      <stop offset="1" stop-color="#8fb8cd"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="88" cy="156" rx="34" ry="10" fill="#1d2719" fill-opacity="0.45"/>
+  <path d="M118 40 L138 54 L122 74 L106 60 Z" fill="url(#blade)"/>
+  <path d="M105 54 L130 20 L136 24 L112 58 Z" fill="url(#blade)"/>
+  <circle cx="87" cy="44" r="18" fill="#f4d6ba"/>
+  <path d="M70 42 C72 26 100 22 106 38 C107 49 98 56 90 55 C77 56 69 50 70 42 Z" fill="#2a3a28"/>
+  <circle cx="81" cy="45" r="2" fill="#1b2318"/>
+  <circle cx="92" cy="45" r="2" fill="#1b2318"/>
+  <path d="M79 53 Q87 58 95 53" stroke="#7b5444" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M62 84 C63 63 74 56 87 56 C102 56 113 64 114 84 L112 130 L63 130 Z" fill="url(#armor)"/>
+  <rect x="74" y="78" width="24" height="22" rx="6" fill="#2c4c27"/>
+  <path d="M62 90 L49 112 L58 116 L70 97 Z" fill="#4f8c45"/>
+  <path d="M114 90 L126 109 L118 116 L106 97 Z" fill="#4f8c45"/>
+  <path d="M74 129 L68 160 L80 160 L85 130 Z" fill="#3a5f34"/>
+  <path d="M100 129 L95 160 L107 160 L112 130 Z" fill="#3a5f34"/>
+  <rect x="64" y="157" width="19" height="6" rx="2" fill="#253220"/>
+  <rect x="94" y="157" width="19" height="6" rx="2" fill="#253220"/>
+  <circle cx="67" cy="106" r="6" fill="#2d4b29"/>
+  <circle cx="109" cy="106" r="6" fill="#2d4b29"/>
+</svg>
