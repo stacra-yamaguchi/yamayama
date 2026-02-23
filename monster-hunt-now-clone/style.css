@@ -998,3 +998,189 @@ body.input-touch .touch-pad {
         font-size: 0.68rem;
     }
 }
+
+/* Mobile gameplay-first override: one-screen, no-scroll layout */
+@media (max-width: 900px) {
+    body.input-touch {
+        padding: 0;
+        overflow: hidden;
+    }
+
+    body.input-touch .background-orb {
+        display: none;
+    }
+
+    body.input-touch .game-shell {
+        width: 100vw;
+        height: 100dvh;
+        margin: 0;
+        gap: 0;
+        grid-template-rows: 1fr;
+        overflow: hidden;
+    }
+
+    body.input-touch .top-panel,
+    body.input-touch .status-grid {
+        display: none;
+    }
+
+    body.input-touch .back-link {
+        top: max(6px, env(safe-area-inset-top));
+        left: max(8px, env(safe-area-inset-left));
+        z-index: 40;
+        font-size: 0.58rem;
+        padding: 3px 8px;
+    }
+
+    body.input-touch .arena-grid {
+        height: 100%;
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(0, 1fr) auto;
+        gap: 0;
+    }
+
+    body.input-touch .field-panel {
+        position: relative;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        display: block;
+        overflow: hidden;
+    }
+
+    body.input-touch .field-panel .panel-head {
+        display: none;
+    }
+
+    body.input-touch .map-stage {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        border: 0;
+        border-radius: 0;
+    }
+
+    body.input-touch .field-hud {
+        top: max(36px, calc(env(safe-area-inset-top) + 30px));
+        left: 8px;
+        right: 8px;
+        gap: 4px;
+    }
+
+    body.input-touch .field-hud-bars {
+        width: min(220px, calc(100% - 10px));
+    }
+
+    body.input-touch .rps-overlay {
+        top: max(36px, calc(env(safe-area-inset-top) + 30px));
+        right: 8px;
+        min-width: 94px;
+        padding: 4px 6px;
+    }
+
+    body.input-touch .map-overlay {
+        left: 8px;
+        right: 8px;
+        bottom: 78px;
+        padding: 6px 8px;
+    }
+
+    body.input-touch .map-overlay p {
+        font-size: 0.62rem;
+    }
+
+    body.input-touch .map-actions {
+        position: absolute;
+        right: 8px;
+        bottom: 8px;
+        width: min(42vw, 180px);
+        margin: 0;
+        z-index: 15;
+    }
+
+    body.input-touch .map-actions button {
+        min-height: 42px;
+        padding: 8px 10px;
+        font-size: 0.78rem;
+    }
+
+    body.input-touch .touch-pad {
+        position: absolute;
+        left: 8px;
+        bottom: 8px;
+        width: min(56vw, 240px);
+        margin: 0;
+        padding: 6px;
+        border: 1px solid rgba(166, 206, 114, 0.46);
+        border-radius: 12px;
+        background: rgba(7, 14, 8, 0.72);
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 6px;
+        z-index: 15;
+    }
+
+    body.input-touch .touch-pad button {
+        min-height: 42px;
+        font-size: 1rem;
+    }
+
+    body.input-touch .battle-panel {
+        border: 0;
+        border-top: 1px solid rgba(154, 207, 109, 0.42);
+        border-radius: 16px 16px 0 0;
+        background: rgba(9, 17, 9, 0.94);
+        padding: 8px 8px max(8px, env(safe-area-inset-bottom));
+        display: grid;
+        grid-template-rows: auto auto auto;
+        gap: 6px;
+        max-height: 192px;
+    }
+
+    body.input-touch .battle-panel .panel-head {
+        margin: 0;
+    }
+
+    body.input-touch .battle-panel .panel-head h2 {
+        font-size: 0.82rem;
+    }
+
+    body.input-touch .battle-panel .panel-head p {
+        font-size: 0.68rem;
+    }
+
+    body.input-touch .battle-target {
+        min-height: 64px;
+        padding: 7px;
+    }
+
+    body.input-touch .target-name {
+        font-size: 0.84rem;
+    }
+
+    body.input-touch .target-sub {
+        margin-top: 3px;
+        font-size: 0.62rem;
+    }
+
+    body.input-touch .bar.boss {
+        margin-top: 6px;
+        height: 8px;
+    }
+
+    body.input-touch .action-row.janken-row {
+        margin-top: 0;
+        gap: 6px;
+    }
+
+    body.input-touch .action-row button {
+        min-height: 42px;
+        font-size: 0.9rem;
+        padding: 8px 6px;
+    }
+
+    body.input-touch .action-row.utility,
+    body.input-touch .log-panel {
+        display: none;
+    }
+}
