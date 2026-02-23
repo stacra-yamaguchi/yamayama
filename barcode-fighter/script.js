@@ -44,10 +44,12 @@ const fighterNames = {
 const state = {
     detector: null,
     detectorBusy: false,
+    productLookupSeq: 0,
     cameraStream: null,
     cameraInterval: null,
     barcodeValue: '',
     barcodeFeatures: null,
+    productInfo: null,
     currentFighter: null,
     collection: [],
     activeLoop: false,
@@ -87,9 +89,16 @@ const el = {
     fileInput: document.getElementById('file-input'),
     manualInput: document.getElementById('manual-input'),
     applyManual: document.getElementById('apply-manual'),
+    refreshProduct: document.getElementById('refresh-product'),
     detectorNote: document.getElementById('detector-note'),
     barcodeValue: document.getElementById('barcode-value'),
     featureSummary: document.getElementById('feature-summary'),
+    productStatus: document.getElementById('product-status'),
+    productName: document.getElementById('product-name'),
+    productBrand: document.getElementById('product-brand'),
+    productCategory: document.getElementById('product-category'),
+    productPrice: document.getElementById('product-price'),
+    productSource: document.getElementById('product-source'),
     generateBtn: document.getElementById('generate-btn'),
     saveBtn: document.getElementById('save-btn'),
     fightBtn: document.getElementById('fight-btn'),
@@ -160,6 +169,290 @@ function summarizeFeatures(features) {
     return `長さ${features.length} / 数字${Math.round(features.digitRatio * 100)}% / 英字${Math.round(features.letterRatio * 100)}% / 記号${Math.round(features.symbolRatio * 100)}% / ${features.productStyle}`;
 }
 
+function normalizePrice(value) {
+    const num = Number(value);
+    if (!Number.isFinite(num) || num <= 0) {
+        return null;
+    }
+    return num;
+}
+
+function classifyPriceBand(low, high) {
+    const mid = high && low ? (low + high) / 2 : (high || low || 0);
+    if (!mid) {
+        return '不明';
+    }
+    if (mid < 5) {
+        return 'エコノミー';
+    }
+    if (mid < 20) {
+        return 'ミドル';
+    }
+    if (mid < 50) {
+        return 'ハイ';
+    }
+    return 'プレミアム';
+}
+
+function formatPriceRange(low, high, currency = 'USD') {
+    const lowN = normalizePrice(low);
+    const highN = normalizePrice(high);
+    if (!lowN && !highN) {
+        return '価格情報なし';
+    }
+    const fmt = (v) => `${currency} ${v.toFixed(2)}`;
+    if (lowN && highN) {
+        return `${fmt(lowN)} - ${fmt(highN)} (${classifyPriceBand(lowN, highN)})`;
+    }
+    const single = lowN || highN;
+    return `${fmt(single)} 前後 (${classifyPriceBand(single, single)})`;
+}
+
+function deriveCategoryFlags(text) {
+    const value = (text || '').toLowerCase();
+    return {
+        beauty: /(beauty|cosmetic|makeup|skin|cream|personal care|ヘルス|美容|化粧)/.test(value),
+        food: /(food|snack|confection|grocery|食品|菓子)/.test(value),
+        beverage: /(drink|beverage|water|tea|coffee|juice|飲料)/.test(value),
+        health: /(health|supplement|vitamin|drug|医薬|健康)/.test(value),
+        household: /(household|home|cleaning|detergent|日用品|掃除)/.test(value),
+        electronics: /(electronics|computer|device|audio|家電|電子)/.test(value),
+    };
+}
+
+function renderProductInfo(product, statusText) {
+    const status = statusText || (product?.found ? '商品情報を取得しました。' : '商品情報が見つかりませんでした。');
+    el.productStatus.textContent = status;
+    el.productName.textContent = product?.title || '-';
+    el.productBrand.textContent = product?.brand || '-';
+    el.productCategory.textContent = product?.category || '-';
+    el.productPrice.textContent = product?.priceLabel || '価格情報なし';
+    el.productSource.textContent = product?.source || '-';
+}
+
+function buildProductInfluence(productInfo) {
+    const base = { attack: 0, defense: 0, agility: 0, hp: 0, abilityBias: [] };
+    if (!productInfo || !productInfo.found) {
+        return base;
+    }
+
+    const flags = deriveCategoryFlags(`${productInfo.category || ''} ${productInfo.title || ''}`);
+    const band = productInfo.priceBand || '不明';
+    const low = normalizePrice(productInfo.priceLow) || 0;
+    const high = normalizePrice(productInfo.priceHigh) || 0;
+    const midPrice = high && low ? (high + low) / 2 : (high || low || 0);
+    const spread = (normalizePrice(productInfo.priceHigh) || 0) - (normalizePrice(productInfo.priceLow) || 0);
+
+    if (flags.beauty) {
+        base.defense += 7;
+        base.hp += 12;
+        base.abilityBias.push('ironAegis');
+    }
+    if (flags.food) {
+        base.hp += 8;
+        base.attack += 3;
+    }
+    if (flags.beverage) {
+        base.agility += 8;
+        base.abilityBias.push('sonicRush');
+    }
+    if (flags.health) {
+        base.defense += 5;
+        base.hp += 10;
+        base.abilityBias.push('ironAegis');
+    }
+    if (flags.household) {
+        base.defense += 6;
+    }
+    if (flags.electronics) {
+        base.attack += 7;
+        base.abilityBias.push('photonShot');
+    }
+
+    if (band === 'プレミアム') {
+        base.attack += 18;
+        base.defense += 16;
+        base.hp += 42;
+        base.agility += 6;
+        base.abilityBias.push('meteorPress', 'meteorPress', 'photonShot');
+    } else if (band === 'ハイ') {
+        base.attack += 12;
+        base.defense += 10;
+        base.hp += 28;
+        base.agility += 3;
+        base.abilityBias.push('photonShot', 'ironAegis');
+    } else if (band === 'ミドル') {
+        base.attack += 7;
+        base.defense += 6;
+        base.hp += 16;
+    } else if (band === 'エコノミー') {
+        base.agility += 11;
+        base.attack += 5;
+        base.hp += 6;
+        base.abilityBias.push('sonicRush', 'sonicRush');
+    }
+
+    if (spread > 20) {
+        base.agility += 8;
+        base.attack += 4;
+        base.abilityBias.push('photonShot', 'photonShot');
+    }
+
+    if (midPrice >= 80) {
+        base.attack += 12;
+        base.defense += 10;
+        base.hp += 36;
+        base.abilityBias.push('meteorPress');
+    } else if (midPrice >= 35) {
+        base.attack += 6;
+        base.defense += 5;
+        base.hp += 14;
+    }
+
+    return base;
+}
+
+async function fetchJsonWithTimeout(url, timeoutMs = 6500) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const res = await fetch(url, { signal: controller.signal });
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+        }
+        return await res.json();
+    } finally {
+        clearTimeout(timeout);
+    }
+}
+
+function mapUpcItemDbProduct(payload, barcode) {
+    if (!payload || payload.code !== 'OK' || !Array.isArray(payload.items) || payload.items.length === 0) {
+        return null;
+    }
+    const item = payload.items[0];
+    const low = normalizePrice(item.lowest_recorded_price);
+    const high = normalizePrice(item.highest_recorded_price);
+    return {
+        found: true,
+        barcode,
+        source: 'UPCItemDB (via allOrigins)',
+        title: item.title || '不明',
+        brand: item.brand || '-',
+        category: item.category || '-',
+        description: item.description || '',
+        priceLow: low,
+        priceHigh: high,
+        currency: 'USD',
+        priceBand: classifyPriceBand(low, high),
+        priceLabel: formatPriceRange(low, high, 'USD'),
+    };
+}
+
+function mapOpenFactsProduct(payload, barcode, sourceLabel) {
+    if (!payload || payload.status !== 1 || !payload.product) {
+        return null;
+    }
+    const p = payload.product;
+    return {
+        found: true,
+        barcode,
+        source: sourceLabel,
+        title: p.product_name || p.product_name_ja || p.generic_name || '不明',
+        brand: p.brands || '-',
+        category: p.categories || '-',
+        description: p.ingredients_text || '',
+        priceLow: null,
+        priceHigh: null,
+        currency: '',
+        priceBand: '不明',
+        priceLabel: '価格情報なし',
+    };
+}
+
+async function fetchProductMetadata(barcode) {
+    const safeCode = encodeURIComponent(barcode);
+    const proxyUpcUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode}`)}`;
+
+    try {
+        const upcPayload = await fetchJsonWithTimeout(proxyUpcUrl, 7000);
+        const mapped = mapUpcItemDbProduct(upcPayload, barcode);
+        if (mapped) {
+            return mapped;
+        }
+    } catch (error) {
+        // 次のAPIへフォールバック
+    }
+
+    const openFactsEndpoints = [
+        { url: `https://world.openfoodfacts.org/api/v2/product/${safeCode}.json`, source: 'OpenFoodFacts' },
+        { url: `https://world.openbeautyfacts.org/api/v2/product/${safeCode}.json`, source: 'OpenBeautyFacts' },
+        { url: `https://world.openproductsfacts.org/api/v2/product/${safeCode}.json`, source: 'OpenProductsFacts' },
+        { url: `https://world.openpetfoodfacts.org/api/v2/product/${safeCode}.json`, source: 'OpenPetFoodFacts' },
+    ];
+
+    for (const endpoint of openFactsEndpoints) {
+        try {
+            const payload = await fetchJsonWithTimeout(endpoint.url, 5500);
+            const mapped = mapOpenFactsProduct(payload, barcode, endpoint.source);
+            if (mapped) {
+                return mapped;
+            }
+        } catch (error) {
+            // 次の候補を試す
+        }
+    }
+
+    return {
+        found: false,
+        barcode,
+        source: '外部API',
+        title: '-',
+        brand: '-',
+        category: '-',
+        description: '',
+        priceLow: null,
+        priceHigh: null,
+        currency: '',
+        priceBand: '不明',
+        priceLabel: '価格情報なし',
+    };
+}
+
+async function lookupProductForBarcode(barcode) {
+    if (!barcode) {
+        state.productInfo = null;
+        renderProductInfo(null, '商品情報検索を待機中です。');
+        return;
+    }
+
+    const seq = ++state.productLookupSeq;
+    state.productInfo = null;
+    renderProductInfo(null, '商品情報を検索中...');
+
+    try {
+        const product = await fetchProductMetadata(barcode);
+        if (seq !== state.productLookupSeq) {
+            return;
+        }
+        state.productInfo = product;
+        if (product.found) {
+            renderProductInfo(product, `商品情報を取得しました（${product.source}）。`);
+            setBattleLog(`商品情報取得: ${product.title}`);
+        } else {
+            renderProductInfo(product, '商品情報は見つかりませんでした。バーコード値のみで生成します。');
+            setBattleLog('商品情報が見つからないため、バーコード特性のみで生成します。');
+        }
+    } catch (error) {
+        if (seq !== state.productLookupSeq) {
+            return;
+        }
+        state.productInfo = null;
+        renderProductInfo(null, `商品情報取得に失敗: ${error.message}`);
+        setBattleLog('商品情報API呼び出しに失敗しました。バーコード特性のみで生成可能です。');
+    }
+}
+
 function analyzeBarcode(value) {
     const length = value.length;
     const digits = (value.match(/[0-9]/g) || []).length;
@@ -198,8 +491,11 @@ function analyzeBarcode(value) {
     };
 }
 
-function pickAbility(features, rand) {
+function pickAbility(features, rand, abilityBias = []) {
     const order = [];
+    for (const bias of abilityBias) {
+        order.push(bias, bias);
+    }
     if (features.digitRatio > 0.66) {
         order.push('ironAegis', 'meteorPress', 'sonicRush');
     }
@@ -238,16 +534,18 @@ function generateFighterFromBarcode(barcode, options = {}) {
     const features = analyzeBarcode(barcode);
     const seed = hashString(`${barcode}|${nonce}`);
     const rand = mulberry32(seed);
+    const productInfo = options.productInfo || null;
+    const influence = buildProductInfluence(productInfo);
 
     const monsterBias = features.symbolRatio + (features.isUrl ? 0.13 : 0) + (features.unique / Math.max(1, features.length)) * 0.2;
     const type = rand() + monsterBias > 0.9 ? 'monster' : 'character';
 
-    const attack = clamp(Math.round(46 + features.letterRatio * 28 + rand() * 30 + (features.hasPackWord ? 4 : 0)), 34, 99);
-    const defense = clamp(Math.round(42 + features.digitRatio * 30 + rand() * 30 + (features.length > 30 ? 6 : 0)), 30, 99);
-    const agility = clamp(Math.round(40 + (1 - features.digitRatio) * 18 + features.symbolRatio * 24 + rand() * 32), 28, 99);
-    const hp = clamp(Math.round(180 + defense * 2 + (features.length * 0.8) + rand() * 42), 180, 360);
+    const attack = clamp(Math.round(46 + features.letterRatio * 28 + rand() * 30 + (features.hasPackWord ? 4 : 0) + influence.attack), 34, 99);
+    const defense = clamp(Math.round(42 + features.digitRatio * 30 + rand() * 30 + (features.length > 30 ? 6 : 0) + influence.defense), 30, 99);
+    const agility = clamp(Math.round(40 + (1 - features.digitRatio) * 18 + features.symbolRatio * 24 + rand() * 32 + influence.agility), 28, 99);
+    const hp = clamp(Math.round(180 + defense * 2 + (features.length * 0.8) + rand() * 42 + influence.hp), 180, 360);
 
-    const abilityKey = pickAbility(features, rand);
+    const abilityKey = pickAbility(features, rand, influence.abilityBias);
     const ability = abilities[abilityKey];
 
     const naming = fighterNames[type];
@@ -255,7 +553,10 @@ function generateFighterFromBarcode(barcode, options = {}) {
     const hue = hashString(barcode) % 360;
     const rank = calcRank(attack + defense + agility + Math.round(hp / 3));
 
-    const desc = `${features.productStyle}の情報密度が反映され、${ability.name}を獲得。${type === 'monster' ? '攻撃は荒いが爆発力が高い。' : 'バランス重視で安定して戦える。'}`;
+    const productLine = productInfo?.found
+        ? `商品「${productInfo.title}」(${productInfo.priceBand}) の特性を取り込み、`
+        : '';
+    const desc = `${productLine}${features.productStyle}の情報密度が反映され、${ability.name}を獲得。${type === 'monster' ? '攻撃は荒いが爆発力が高い。' : 'バランス重視で安定して戦える。'}`;
 
     return {
         id: `fighter-${Date.now()}-${Math.floor(Math.random() * 1e6)}`,
@@ -274,6 +575,7 @@ function generateFighterFromBarcode(barcode, options = {}) {
             agility,
             hp,
         },
+        productInfo,
         features,
         desc,
     };
@@ -301,6 +603,7 @@ function setBarcodeValue(value, sourceLabel = '取得') {
     el.barcodeValue.textContent = `${normalized} (${sourceLabel})`;
     el.featureSummary.textContent = summarizeFeatures(state.barcodeFeatures);
     setBattleLog('バーコード情報を更新しました。ファイターを生成してください。');
+    lookupProductForBarcode(normalized);
 }
 
 function hasAnyDecoder() {
@@ -732,6 +1035,7 @@ function renderCollection() {
             return `
                 <article class="collection-item" data-id="${fighter.id}">
                     <h4>${fighter.name} <span class="mini">RANK ${fighter.rank}</span></h4>
+                    <p class="mini">${fighter.productInfo?.found ? fighter.productInfo.title : '商品情報なし'}</p>
                     <p class="mini">${fighter.type === 'monster' ? 'モンスター' : 'キャラクター'} / ${fighter.abilityName}</p>
                     <p class="mini">ATK ${fighter.stats.attack} | DEF ${fighter.stats.defense} | AGI ${fighter.stats.agility}</p>
                     <p class="mini">登録: ${formatDateTime(fighter.createdAt)}</p>
@@ -756,8 +1060,14 @@ function selectCollectionFighter(id, autoFight = false) {
     state.currentFighter = found;
     state.barcodeValue = found.barcode;
     state.barcodeFeatures = found.features || analyzeBarcode(found.barcode);
+    state.productInfo = found.productInfo || null;
     el.barcodeValue.textContent = `${found.barcode} (コレクション)`;
     el.featureSummary.textContent = summarizeFeatures(state.barcodeFeatures);
+    if (state.productInfo?.found) {
+        renderProductInfo(state.productInfo, `保存済みの商品情報を表示中（${state.productInfo.source}）。`);
+    } else {
+        renderProductInfo(null, '保存データに商品情報がないため、必要なら再検索してください。');
+    }
     displayFighter(found);
     if (autoFight) {
         launchBattle(found);
@@ -1578,9 +1888,17 @@ function bindEvents() {
             setBattleLog('先にバーコードを読み込んでください。');
             return;
         }
-        state.currentFighter = generateFighterFromBarcode(state.barcodeValue);
+        state.currentFighter = generateFighterFromBarcode(state.barcodeValue, { productInfo: state.productInfo });
         displayFighter(state.currentFighter);
         setBattleLog(`${state.currentFighter.name} を生成しました。`);
+    });
+
+    el.refreshProduct.addEventListener('click', () => {
+        if (!state.barcodeValue) {
+            setBattleLog('再検索するバーコードがありません。先に読み込んでください。');
+            return;
+        }
+        lookupProductForBarcode(state.barcodeValue);
     });
 
     el.saveBtn.addEventListener('click', addCurrentToCollection);
@@ -1645,6 +1963,7 @@ function bindEvents() {
 async function bootstrap() {
     drawIdleScene();
     bindEvents();
+    renderProductInfo(null, '商品情報検索を待機中です。');
     loadCollection();
     await initDetector();
 }

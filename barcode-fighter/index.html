@@ -40,12 +40,23 @@
                     <label for="manual-input">手動入力（フォールバック）</label>
                     <textarea id="manual-input" rows="3" placeholder="読み取れない場合はコード文字列を入力"></textarea>
                     <button id="apply-manual" type="button" class="ghost">入力を使う</button>
+                    <button id="refresh-product" type="button" class="ghost">商品情報を再検索</button>
                     <div class="detector-note" id="detector-note"></div>
                 </div>
             </div>
             <div class="scan-result">
                 <div><span class="label">読み取り結果:</span> <span id="barcode-value">未取得</span></div>
                 <div><span class="label">商品特性:</span> <span id="feature-summary">-</span></div>
+            </div>
+            <div class="product-panel" id="product-panel">
+                <p id="product-status" class="product-status">商品情報検索を待機中です。</p>
+                <div class="product-grid">
+                    <div><span class="label">商品名:</span> <span id="product-name">-</span></div>
+                    <div><span class="label">ブランド:</span> <span id="product-brand">-</span></div>
+                    <div><span class="label">カテゴリ:</span> <span id="product-category">-</span></div>
+                    <div><span class="label">価格帯:</span> <span id="product-price">-</span></div>
+                    <div><span class="label">取得元:</span> <span id="product-source">-</span></div>
+                </div>
             </div>
         </section>
 
@@ -130,8 +141,8 @@
 
         <footer class="meta-footer">
             <div class="game-meta">
-                <span>Version 1.2.0</span>
-                <span>Last Updated: 2026-02-23 11:20 JST</span>
+                <span>Version 1.3.1</span>
+                <span>Last Updated: 2026-02-23 12:00 JST</span>
             </div>
             <a href="../index.html" class="back-link">← Back to Game Center</a>
         </footer>

@@ -46,6 +46,7 @@ const CONFIG = {
 
 const BEST_SCORE_KEY = "neo-pong-best-score-v1";
 const BEST_SCORE_AT_KEY = "neo-pong-best-score-at-v1";
+const NPC_LEVEL_KEY = "neo-pong-npc-level-v1";
 
 function randomRange(min, max) {
     return Math.random() * (max - min) + min;
@@ -57,6 +58,10 @@ function randomInt(min, max) {
 
 function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
+}
+
+function lerp(min, max, t) {
+    return min + (max - min) * t;
 }
 
 function formatRecordDate(isoString) {
@@ -75,7 +80,7 @@ const CHARACTER_ROSTER = [
     {
         id: "ace-blue",
         name: "ACE BLUE",
-        spriteSrc: "images/player_anime_blue.svg",
+        spriteSrc: "images/player_anime_blue.png",
         spriteScale: 0.82,
         color: "#00f3ff",
         accent: "#7cfff8",
@@ -93,7 +98,7 @@ const CHARACTER_ROSTER = [
     {
         id: "emerald-flare",
         name: "EMERALD",
-        spriteSrc: "images/player_anime_green.svg",
+        spriteSrc: "images/player_anime_green.png",
         spriteScale: 0.84,
         color: "#7dffb9",
         accent: "#c6ffe8",
@@ -111,7 +116,7 @@ const CHARACTER_ROSTER = [
     {
         id: "blaze-orbit",
         name: "BLAZE",
-        spriteSrc: "images/player_anime_orange.svg",
+        spriteSrc: "images/player_anime_red.png",
         spriteScale: 0.84,
         color: "#ffb36b",
         accent: "#ffe2c2",
@@ -129,7 +134,7 @@ const CHARACTER_ROSTER = [
     {
         id: "violet-strike",
         name: "VIOLET",
-        spriteSrc: "images/player_anime_violet.svg",
+        spriteSrc: "images/player_anime_yellow.png",
         spriteScale: 0.84,
         color: "#c5a3ff",
         accent: "#efe5ff",
@@ -147,7 +152,7 @@ const CHARACTER_ROSTER = [
     {
         id: "rose-rival",
         name: "ROSE",
-        spriteSrc: "images/player_anime_pink.svg",
+        spriteSrc: "images/player_anime_pink.png",
         spriteScale: 0.84,
         color: "#ff82cb",
         accent: "#ffe0f2",
@@ -397,29 +402,45 @@ class Character {
         const bob = Math.sin(frameCount * 0.12 + (this.side === "left" ? 0.5 : 1.9)) * 2.4;
         const centerX = this.x + this.width / 2;
         const centerY = this.y + this.height * 0.58 + bob;
-        const spriteWidth = this.width * 1.28 * this.spriteScale;
-        const spriteHeight = this.height * 1.72 * this.spriteScale;
+        const spriteBoxWidth = this.width * 1.28 * this.spriteScale;
+        const spriteBoxHeight = this.height * 1.72 * this.spriteScale;
+        let drawWidth = spriteBoxWidth;
+        let drawHeight = spriteBoxHeight;
+
+        if (this.sprite && this.sprite.naturalWidth > 0 && this.sprite.naturalHeight > 0) {
+            const imageAspect = this.sprite.naturalWidth / this.sprite.naturalHeight;
+            const boxAspect = spriteBoxWidth / spriteBoxHeight;
+            if (imageAspect > boxAspect) {
+                drawWidth = spriteBoxWidth;
+                drawHeight = drawWidth / imageAspect;
+            } else {
+                drawHeight = spriteBoxHeight;
+                drawWidth = drawHeight * imageAspect;
+            }
+        }
+
         const sideSign = this.side === "left" ? 1 : -1;
         const lean = clamp((this.vx * 0.04 + this.vy * 0.015) * sideSign + swingPose * 0.12 * sideSign, -0.2, 0.2);
         const pulse = 1 + Math.sin(frameCount * 0.2 + (this.side === "left" ? 0 : 0.7)) * 0.015;
+        const facingScaleX = this.side === "left" ? -1 : 1;
 
         ctx.save();
         ctx.translate(centerX, centerY);
         ctx.rotate(lean);
-        ctx.scale(pulse, pulse);
+        ctx.scale(pulse * facingScaleX, pulse);
 
         if (auraStrength > 0) {
             ctx.save();
             ctx.fillStyle = this.side === "left" ? "rgba(99,248,255,0.24)" : "rgba(255,117,201,0.24)";
             ctx.beginPath();
-            ctx.ellipse(0, spriteHeight * 0.08, spriteWidth * 0.58, spriteHeight * 0.34, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, drawHeight * 0.08, drawWidth * 0.58, drawHeight * 0.34, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.restore();
         }
 
         ctx.shadowBlur = 14 + auraStrength * 16;
         ctx.shadowColor = this.color;
-        ctx.drawImage(this.sprite, -spriteWidth / 2, -spriteHeight * 0.56, spriteWidth, spriteHeight);
+        ctx.drawImage(this.sprite, -drawWidth / 2, -drawHeight * 0.56, drawWidth, drawHeight);
         ctx.restore();
     }
 
@@ -478,6 +499,9 @@ class Game {
         this.baseFollowRateY = 0.4;
         this.baseKeyboardSpeed = 10;
         this.keyState = { up: false, down: false, left: false, right: false };
+        this.maxNpcLevel = 10;
+        this.npcLevel = clamp(Number(localStorage.getItem(NPC_LEVEL_KEY)) || 1, 1, this.maxNpcLevel);
+        this.aiDifficulty = this.getAiDifficulty(this.npcLevel);
 
         this.playerOptions = CHARACTER_ROSTER.filter((item) => PLAYER_CHARACTER_IDS.includes(item.id));
         this.npcOptions = CHARACTER_ROSTER.filter((item) => NPC_CHARACTER_IDS.includes(item.id));
@@ -527,6 +551,31 @@ class Game {
         return CHARACTER_ROSTER.find((item) => item.id === id) || null;
     }
 
+    getAiDifficulty(level) {
+        const safeLevel = clamp(level, 1, this.maxNpcLevel);
+        const t = (safeLevel - 1) / (this.maxNpcLevel - 1);
+        return {
+            level: safeLevel,
+            followRateY: lerp(0.1, 0.34, t),
+            predictScale: lerp(2.6, 7.2, t),
+            targetJitter: lerp(34, 4, t),
+            swingRangeY: lerp(62, 128, t),
+            swingRangeX: lerp(95, 190, t),
+            swingWindow: lerp(0.38, 0.1, t),
+            shotPowerMultiplier: lerp(0.9, 1.55, t),
+            shotAngleNoise: lerp(0.2, 0.03, t),
+            spinFactor: lerp(0.8, 1.35, t)
+        };
+    }
+
+    setNpcLevel(level, persist = true) {
+        this.npcLevel = clamp(level, 1, this.maxNpcLevel);
+        this.aiDifficulty = this.getAiDifficulty(this.npcLevel);
+        if (persist) {
+            localStorage.setItem(NPC_LEVEL_KEY, String(this.npcLevel));
+        }
+    }
+
     pickRandomNpcVariant(excludeId = "") {
         const pool = this.npcOptions.filter((item) => item.id !== excludeId);
         const candidates = pool.length > 0 ? pool : this.npcOptions;
@@ -535,6 +584,8 @@ class Game {
 
     createCharacter(side, variant) {
         const isPlayer = side === "left";
+        const levelT = (this.npcLevel - 1) / (this.maxNpcLevel - 1);
+        const aiRacketAssistByLevel = Math.round(lerp(2, 8, levelT));
         const options = {
             side,
             name: isPlayer ? "YOU" : "TARGET-BOT",
@@ -548,9 +599,9 @@ class Game {
             accent: variant.accent,
             spriteSrc: variant.spriteSrc,
             spriteScale: variant.spriteScale ?? 0.84,
-            racketAssist: isPlayer ? (variant.playerRacketAssist ?? 9) : (variant.aiRacketAssist ?? 5),
+            racketAssist: isPlayer ? (variant.playerRacketAssist ?? 9) : (variant.aiRacketAssist ?? 5) + aiRacketAssistByLevel,
             traits: variant.traits || {},
-            followRateY: isPlayer ? this.baseFollowRateY : 0.12
+            followRateY: isPlayer ? this.baseFollowRateY : this.aiDifficulty.followRateY
         };
 
         if (isPlayer) {
@@ -603,7 +654,7 @@ class Game {
 
         const npcVariant = this.getCharacterById(this.selectedNpcId);
         ui.startMatchBtn.textContent = npcVariant
-            ? `START VS ${npcVariant.name} (${npcVariant.roleLabel || "STYLE"})`
+            ? `START VS ${npcVariant.name} (${npcVariant.roleLabel || "STYLE"}) LV.${this.npcLevel}`
             : "START MATCH";
     }
 
@@ -643,7 +694,7 @@ class Game {
         }
 
         this.resetMatch(false);
-        this.message = `${playerVariant.name} VS ${npcVariant.name}`;
+        this.message = `${playerVariant.name} VS ${npcVariant.name} [LV.${this.npcLevel}]`;
         this.messageTimer = 75;
     }
 
@@ -871,8 +922,11 @@ class Game {
         const distanceY = Math.abs(ball.y - centerY);
         const distanceX = Math.abs(ball.x - (character.x + character.width * 0.5));
         const coming = character.side === "left" ? ball.vx < 0 : ball.vx > 0;
+        const swingRangeY = character.side === "right" ? this.aiDifficulty.swingRangeY : 90;
+        const swingRangeX = character.side === "right" ? this.aiDifficulty.swingRangeX : 130;
+        const swingWindow = character.side === "right" ? this.aiDifficulty.swingWindow : 0.2;
 
-        if (coming && distanceY < 90 && distanceX < 130 && character.swingTimer <= 0.2) {
+        if (coming && distanceY < swingRangeY && distanceX < swingRangeX && character.swingTimer <= swingWindow) {
             character.triggerSwing(1.04);
         }
     }
@@ -924,15 +978,26 @@ class Game {
         let nextSpeed = clamp(Math.hypot(ball.vx, ball.vy) + 0.45, CONFIG.baseBallSpeed, CONFIG.maxBallSpeed);
         const shotPower = character.traits?.shotPower ?? 1;
         nextSpeed = clamp(nextSpeed * shotPower, CONFIG.baseBallSpeed, CONFIG.maxBallSpeed * 1.5);
+        if (character.side === "right") {
+            nextSpeed = clamp(
+                nextSpeed * this.aiDifficulty.shotPowerMultiplier,
+                CONFIG.baseBallSpeed,
+                CONFIG.maxBallSpeed * 1.8
+            );
+        }
         if (character.side === "left" && this.effects.shotBoost > 0) {
             nextSpeed = clamp(nextSpeed * 2, CONFIG.baseBallSpeed, CONFIG.maxBallSpeed * 2);
         }
 
-        const angle = offset * (Math.PI / 3.2);
+        let angle = offset * (Math.PI / 3.2);
+        if (character.side === "right") {
+            angle += randomRange(-this.aiDifficulty.shotAngleNoise, this.aiDifficulty.shotAngleNoise);
+        }
         ball.speed = nextSpeed;
         ball.vx = direction * nextSpeed * Math.cos(angle);
         ball.vy = nextSpeed * Math.sin(angle) + character.vy * 0.2;
-        ball.spin = clamp(ball.spin * 0.55 + offset * 1.2 + character.vy * 0.03, -2.2, 2.2);
+        const spinFactor = character.side === "right" ? this.aiDifficulty.spinFactor : 1;
+        ball.spin = clamp((ball.spin * 0.55 + offset * 1.2 + character.vy * 0.03) * spinFactor, -2.2, 2.2);
 
         ball.x = racket.x + direction * (character.racketRadius + ball.radius + 2);
         ball.lastHitFrame = this.frameCount;
@@ -973,10 +1038,22 @@ class Game {
         if (reached && lead >= CONFIG.minLead) {
             this.gameOver = true;
             this.winner = side;
-            this.message = side === "left" ? "GAME SET: YOU" : "GAME SET: TARGET-BOT";
+            if (side === "left") {
+                const prevLevel = this.npcLevel;
+                if (this.npcLevel < this.maxNpcLevel) {
+                    this.setNpcLevel(this.npcLevel + 1);
+                }
+                const isLevelUp = this.npcLevel > prevLevel;
+                this.message = isLevelUp
+                    ? `GAME SET: YOU / NEXT LV.${this.npcLevel}`
+                    : "GAME SET: YOU / MAX LV CLEAR";
+            } else {
+                this.message = `GAME SET: TARGET-BOT / RETRY LV.${this.npcLevel}`;
+            }
             this.messageTimer = 999999;
             this.balls = [];
             this.updateBestScore(this.player.score);
+            this.updateCharacterSelectUi();
             this.updateHud();
             return;
         }
@@ -1114,13 +1191,13 @@ class Game {
             ui.phase.innerText = "STATE: CHARACTER SELECT";
             const selectedInfo = selected ? `${selected.name} ${this.getTraitSummary(selected)}` : "-";
             const rivalInfo = rival ? `${rival.name} ${this.getTraitSummary(rival)}` : "-";
-            ui.rally.innerText = `YOU ${selectedInfo} | NPC ${rivalInfo}`;
+            ui.rally.innerText = `YOU ${selectedInfo} | NPC ${rivalInfo} | LV.${this.npcLevel}`;
         } else if (this.gameOver) {
-            ui.phase.innerText = "STATE: MATCH END";
+            ui.phase.innerText = `STATE: MATCH END (LV.${this.npcLevel})`;
         } else if (this.player.score >= 10 && this.ai.score >= 10) {
-            ui.phase.innerText = `SERVE: ${this.currentServer === "left" ? "YOU" : "TARGET-BOT"} (DEUCE)`;
+            ui.phase.innerText = `SERVE: ${this.currentServer === "left" ? "YOU" : "TARGET-BOT"} (DEUCE) | LV.${this.npcLevel}`;
         } else {
-            ui.phase.innerText = `SERVE: ${this.currentServer === "left" ? "YOU" : "TARGET-BOT"}`;
+            ui.phase.innerText = `SERVE: ${this.currentServer === "left" ? "YOU" : "TARGET-BOT"} | LV.${this.npcLevel}`;
         }
 
         if (!this.selectionMode) {
@@ -1157,8 +1234,11 @@ class Game {
         this.player.setTargetY(this.mouseY - this.player.height / 2);
 
         const aiBall = this.pickAiTargetBall();
+        this.ai.followRateY = this.aiDifficulty.followRateY;
         if (aiBall) {
-            const aiPredictY = aiBall.y + aiBall.vy * 4.2;
+            const aiPredictY = aiBall.y
+                + aiBall.vy * this.aiDifficulty.predictScale
+                + randomRange(-this.aiDifficulty.targetJitter, this.aiDifficulty.targetJitter);
             this.ai.setTargetY(aiPredictY - this.ai.height / 2);
         }
 
@@ -1259,7 +1339,7 @@ class Game {
         ctx.textAlign = "center";
         ctx.fillStyle = "rgba(224, 249, 255, 0.95)";
         ctx.font = "12px 'Press Start 2P', cursive";
-        ctx.fillText("SELECT CHARACTER AND PRESS START", canvas.width / 2, canvas.height - 48);
+        ctx.fillText(`SELECT CHARACTER / NPC LV.${this.npcLevel}`, canvas.width / 2, canvas.height - 48);
         ctx.font = "9px 'Press Start 2P', cursive";
         ctx.fillStyle = "rgba(160, 214, 225, 0.95)";
         ctx.fillText("ENTER / SPACE also starts match", canvas.width / 2, canvas.height - 26);
@@ -1284,8 +1364,11 @@ class Game {
         ctx.font = "16px 'Press Start 2P', cursive";
         ctx.fillText(this.winner === "left" ? "WINNER: YOU" : "WINNER: TARGET-BOT", canvas.width / 2, canvas.height / 2 + 16);
 
+        ctx.font = "11px 'Press Start 2P', cursive";
+        ctx.fillText(`NPC LEVEL ${this.npcLevel}`, canvas.width / 2, canvas.height / 2 + 36);
+
         ctx.font = "10px 'Press Start 2P', cursive";
-        ctx.fillText("SPACE / ENTER / CLICK FOR NEXT GAME", canvas.width / 2, canvas.height / 2 + 54);
+        ctx.fillText("SPACE / ENTER / CLICK FOR NEXT GAME", canvas.width / 2, canvas.height / 2 + 62);
         ctx.restore();
     }
 

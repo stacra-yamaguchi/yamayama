@@ -180,6 +180,27 @@ textarea {
     line-height: 1.8;
 }
 
+.product-panel {
+    margin-top: 10px;
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: rgba(5, 14, 28, 0.7);
+    border: 1px solid rgba(146, 201, 236, 0.25);
+}
+
+.product-status {
+    margin: 0 0 8px;
+    font-size: 0.86rem;
+    color: #cde4ff;
+}
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 14px;
+    font-size: 0.88rem;
+}
+
 .label {
     color: var(--text-sub);
 }
@@ -694,6 +715,10 @@ textarea {
     }
 
     .stat-list {
+        grid-template-columns: 1fr;
+    }
+
+    .product-grid {
         grid-template-columns: 1fr;
     }
 

@@ -298,6 +298,52 @@ body {
     backdrop-filter: blur(2px);
 }
 
+.rps-overlay {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 7;
+    min-width: 122px;
+    border: 1px solid rgba(176, 214, 120, 0.45);
+    border-radius: 10px;
+    background: rgba(8, 15, 8, 0.74);
+    padding: 6px 8px;
+    display: grid;
+    gap: 3px;
+    pointer-events: none;
+    backdrop-filter: blur(2px);
+}
+
+.rps-overlay.hidden {
+    display: none;
+}
+
+.rps-title {
+    margin: 0;
+    font-size: 0.62rem;
+    color: #c9e6a4;
+}
+
+.rps-line {
+    margin: 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.66rem;
+    color: #e4f6c9;
+}
+
+.rps-line strong {
+    font-family: "Orbitron", "Noto Sans JP", sans-serif;
+    color: #f3ffdf;
+}
+
+.rps-round {
+    margin: 2px 0 0;
+    font-size: 0.58rem;
+    color: #b9d89d;
+}
+
 .hud-bar-item {
     display: grid;
     gap: 3px;
@@ -736,6 +782,25 @@ body.input-touch .touch-pad {
         height: 6px;
     }
 
+    .rps-overlay {
+        top: 6px;
+        right: 6px;
+        min-width: 108px;
+        padding: 5px 6px;
+    }
+
+    .rps-title {
+        font-size: 0.56rem;
+    }
+
+    .rps-line {
+        font-size: 0.58rem;
+    }
+
+    .rps-round {
+        font-size: 0.52rem;
+    }
+
     .map-actions button,
     .action-row button {
         min-height: 52px;
@@ -776,5 +841,160 @@ body.input-touch .touch-pad {
     .log-panel {
         min-height: 96px;
         max-height: 112px;
+    }
+}
+
+@media (max-width: 900px) {
+    html,
+    body.input-touch {
+        height: 100dvh;
+    }
+
+    body.input-touch {
+        overflow: hidden;
+    }
+
+    body.input-touch .game-shell {
+        height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        gap: 6px;
+        grid-template-rows: auto 1fr;
+        overflow: hidden;
+    }
+
+    body.input-touch .back-link {
+        position: fixed;
+        top: max(4px, env(safe-area-inset-top));
+        left: max(6px, env(safe-area-inset-left));
+        z-index: 30;
+        padding: 3px 6px;
+        border: 1px solid rgba(168, 203, 120, 0.36);
+        border-radius: 999px;
+        background: rgba(11, 19, 10, 0.7);
+        font-size: 0.56rem;
+    }
+
+    body.input-touch .top-panel {
+        padding: 6px 10px;
+        min-height: 44px;
+    }
+
+    body.input-touch .top-panel .label {
+        display: none;
+    }
+
+    body.input-touch .top-panel h1 {
+        margin: 0;
+        font-size: clamp(0.92rem, 3.9vw, 1.08rem);
+    }
+
+    body.input-touch .meta-box {
+        font-size: 0.5rem;
+        text-align: right;
+    }
+
+    body.input-touch .status-grid {
+        display: none;
+    }
+
+    body.input-touch .arena-grid {
+        min-height: 0;
+        height: 100%;
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(0, 1.15fr) minmax(0, 1fr);
+        gap: 6px;
+    }
+
+    body.input-touch .panel {
+        min-height: 0;
+        overflow: hidden;
+        padding: 6px;
+    }
+
+    body.input-touch .panel-head {
+        margin-bottom: 6px;
+    }
+
+    body.input-touch .panel-head h2 {
+        font-size: 0.86rem;
+    }
+
+    body.input-touch .panel-head p {
+        font-size: 0.7rem;
+    }
+
+    body.input-touch .field-panel {
+        position: relative;
+        top: auto;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr) auto auto;
+        gap: 6px;
+    }
+
+    body.input-touch .map-stage {
+        min-height: 0;
+        height: 100%;
+        aspect-ratio: auto;
+    }
+
+    body.input-touch .map-actions,
+    body.input-touch .touch-pad,
+    body.input-touch .action-row,
+    body.input-touch .log-panel {
+        margin-top: 0;
+    }
+
+    body.input-touch .map-actions button,
+    body.input-touch .action-row button {
+        min-height: 46px;
+        font-size: 0.86rem;
+    }
+
+    body.input-touch .touch-pad {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    body.input-touch .touch-pad button {
+        min-height: 52px;
+        font-size: 1.06rem;
+    }
+
+    body.input-touch .battle-panel {
+        display: grid;
+        grid-template-rows: auto auto auto auto minmax(0, 1fr);
+        gap: 6px;
+    }
+
+    body.input-touch .battle-target {
+        min-height: 96px;
+        padding: 8px;
+    }
+
+    body.input-touch .target-name {
+        font-size: 0.9rem;
+    }
+
+    body.input-touch .target-sub {
+        margin-top: 4px;
+        font-size: 0.68rem;
+    }
+
+    body.input-touch .action-row {
+        gap: 6px;
+    }
+
+    body.input-touch .log-panel {
+        min-height: 0;
+        max-height: 82px;
+        padding: 6px;
+    }
+
+    body.input-touch .log-panel p {
+        font-size: 0.66rem;
+    }
+
+    body.input-touch .log-panel li {
+        font-size: 0.68rem;
     }
 }

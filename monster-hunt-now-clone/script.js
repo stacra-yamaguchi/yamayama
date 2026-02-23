@@ -22,6 +22,10 @@ const ui = {
     targetDetail: document.getElementById("target-detail"),
     monsterHpBar: document.getElementById("monster-hp-bar"),
     monsterHpText: document.getElementById("monster-hp-text"),
+    fieldRpsOverlay: document.getElementById("field-rps-overlay"),
+    fieldPlayerHand: document.getElementById("field-player-hand"),
+    fieldMonsterHand: document.getElementById("field-monster-hand"),
+    fieldRpsRound: document.getElementById("field-rps-round"),
     fieldHr: document.getElementById("field-hr"),
     fieldWeapon: document.getElementById("field-weapon"),
     fieldZenny: document.getElementById("field-zenny"),
@@ -60,6 +64,10 @@ const RPS_LABEL = {
     rock: "グー",
     scissors: "チョキ",
     paper: "パー"
+};
+const BATTLE_PHASE = {
+    ENCOUNTER: "encounter",
+    ACTIVE: "active"
 };
 const HEALING_ITEM_TYPES = [
     {
@@ -128,7 +136,10 @@ const monsterCatalog = [
 ];
 
 const spriteSources = {
-    player: "images/player_hunter.svg"
+    playerFront: "images/player_hunter_front.png",
+    playerBack: "images/player_hunter_back.png",
+    playerRight: "images/player_hunter_right.png",
+    playerLeft: "images/player_hunter_left.png"
 };
 monsterCatalog.forEach((monster) => {
     spriteSources[monster.id] = monster.sprite;
@@ -198,6 +209,10 @@ const gameState = {
     camera: {
         x: 0,
         y: 0
+    },
+    view: {
+        zoom: 1,
+        targetZoom: 1
     }
 };
 
@@ -554,6 +569,9 @@ function startBattle(monsterId) {
         monsterId: monster.uid,
         hp: monster.hpMax,
         timer: 75,
+        phase: BATTLE_PHASE.ENCOUNTER,
+        phaseTime: 0,
+        introDuration: 1.05,
         turnCooldown: 0,
         round: 0,
         winStreak: 0,
@@ -629,7 +647,7 @@ function chooseMonsterHand(monster, battle) {
 
 function playRpsRound(playerHand) {
     const battle = gameState.battle;
-    if (!battle || battle.turnCooldown > 0) {
+    if (!battle || battle.phase !== BATTLE_PHASE.ACTIVE || battle.turnCooldown > 0) {
         return;
     }
 
@@ -748,6 +766,7 @@ function finishBattle(won, reason) {
 
     gameState.battle = null;
     gameState.selectedMonsterId = null;
+    gameState.view.targetZoom = 1;
     clearTouchVector();
 }
 
@@ -788,6 +807,19 @@ function updateBattle(delta) {
     monster.x = player.x + (toMonsterX / pull) * clamp(pull, 94, 136);
     monster.y = player.y + (toMonsterY / pull) * clamp(pull, 70, 120);
 
+    battle.phaseTime += delta;
+    if (battle.phase === BATTLE_PHASE.ENCOUNTER) {
+        gameState.view.targetZoom = 1.36;
+        if (battle.phaseTime >= battle.introDuration) {
+            battle.phase = BATTLE_PHASE.ACTIVE;
+            battle.phaseTime = 0;
+            battle.turnCooldown = Math.max(battle.turnCooldown, 0.25);
+            addLog("会敵完了。じゃんけん開始。", "warn");
+        }
+    } else {
+        gameState.view.targetZoom = 1.22;
+    }
+
     battle.timer -= delta;
     battle.turnCooldown = Math.max(0, battle.turnCooldown - delta);
     battle.playerAnim = Math.max(0, battle.playerAnim - delta);
@@ -804,6 +836,7 @@ function updateOutOfBattle(delta) {
     const player = gameState.player;
     player.stamina = clamp(player.stamina + delta * 20, 0, player.maxStamina);
     player.hp = clamp(player.hp + delta * 2.4, 1, player.maxHp);
+    gameState.view.targetZoom = 1;
 }
 
 function updateEffects(delta) {
@@ -854,9 +887,30 @@ function updatePlayer(delta) {
     movePlayerBy(vx * player.speed * delta, vy * player.speed * delta);
 }
 
+function updateViewTransition(delta) {
+    const view = gameState.view;
+    const blend = clamp(delta * 8, 0, 1);
+    view.zoom += (view.targetZoom - view.zoom) * blend;
+}
+
 function updateCamera() {
-    gameState.camera.x = clamp(gameState.player.x - canvas.width / 2, 0, WORLD.width - canvas.width);
-    gameState.camera.y = clamp(gameState.player.y - canvas.height / 2, 0, WORLD.height - canvas.height);
+    const zoom = gameState.view.zoom;
+    const viewW = canvas.width / zoom;
+    const viewH = canvas.height / zoom;
+
+    let focusX = gameState.player.x;
+    let focusY = gameState.player.y;
+
+    if (gameState.battle) {
+        const target = findMonster(gameState.battle.monsterId);
+        if (target) {
+            focusX = (gameState.player.x + target.x) * 0.5;
+            focusY = (gameState.player.y + target.y) * 0.5;
+        }
+    }
+
+    gameState.camera.x = clamp(focusX - viewW / 2, 0, Math.max(0, WORLD.width - viewW));
+    gameState.camera.y = clamp(focusY - viewH / 2, 0, Math.max(0, WORLD.height - viewH));
 }
 
 function worldToScreen(x, y) {
@@ -867,9 +921,12 @@ function worldToScreen(x, y) {
 }
 
 function screenToWorld(x, y) {
+    const zoom = gameState.view.zoom;
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
     return {
-        x: x + gameState.camera.x,
-        y: y + gameState.camera.y
+        x: gameState.camera.x + cx + (x - cx) / zoom,
+        y: gameState.camera.y + cy + (y - cy) / zoom
     };
 }
 
@@ -1034,7 +1091,13 @@ function drawPlayer() {
 
     const bob = Math.sin(gameState.time * 8) * 1.6;
     const shakeX = battle && battle.playerAnim > 0 ? randomRange(-2, 2) : 0;
-    drawSprite("player", pos.x + shakeX, pos.y + bob, 82, 94);
+    let playerSprite = "playerFront";
+    if (Math.abs(player.dirX) > Math.abs(player.dirY)) {
+        playerSprite = player.dirX >= 0 ? "playerRight" : "playerLeft";
+    } else {
+        playerSprite = player.dirY < 0 ? "playerBack" : "playerFront";
+    }
+    drawSprite(playerSprite, pos.x + shakeX, pos.y + bob, 82, 94);
 
     ctx.strokeStyle = "rgba(185, 246, 143, 0.9)";
     ctx.lineWidth = 2;
@@ -1057,7 +1120,95 @@ function drawEffects() {
     });
 }
 
+function drawHandTag(x, y, whoLabel, handLabel, tint) {
+    const pos = worldToScreen(x, y);
+    const tagY = pos.y - 108;
+    const text = `${whoLabel}: ${handLabel}`;
+    const paddingX = 8;
+    const tagW = 66 + text.length * 6;
+    const tagH = 18;
+
+    ctx.fillStyle = `rgba(${tint}, 0.9)`;
+    ctx.fillRect(pos.x - tagW / 2, tagY - tagH / 2, tagW, tagH);
+    ctx.fillStyle = "rgba(8, 15, 7, 0.75)";
+    ctx.fillRect(pos.x - tagW / 2 + 1, tagY - tagH / 2 + 1, tagW - 2, tagH - 2);
+
+    ctx.fillStyle = "#f1ffd7";
+    ctx.font = "11px 'Noto Sans JP', sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, pos.x - tagW / 2 + paddingX, tagY);
+}
+
+function drawBattleHandTags() {
+    const battle = gameState.battle;
+    if (!battle) {
+        return;
+    }
+
+    const monster = findMonster(battle.monsterId);
+    if (!monster) {
+        return;
+    }
+
+    const playerLabel = battle.lastPlayerHand ? RPS_LABEL[battle.lastPlayerHand] : "待機";
+    const monsterLabel = battle.lastMonsterHand ? RPS_LABEL[battle.lastMonsterHand] : "待機";
+
+    drawHandTag(gameState.player.x, gameState.player.y, "あなた", playerLabel, "164,234,132");
+    drawHandTag(monster.x, monster.y, "相手", monsterLabel, "255,192,132");
+}
+
+function drawEncounterEffect() {
+    const battle = gameState.battle;
+    if (!battle || battle.phase !== BATTLE_PHASE.ENCOUNTER) {
+        return;
+    }
+
+    const monster = findMonster(battle.monsterId);
+    if (!monster) {
+        return;
+    }
+
+    const progress = clamp(battle.phaseTime / battle.introDuration, 0, 1);
+    const centerX = (gameState.player.x + monster.x) * 0.5;
+    const centerY = (gameState.player.y + monster.y) * 0.5;
+    const center = worldToScreen(centerX, centerY);
+    const radius = 36 + progress * 90;
+    const alpha = 1 - progress;
+
+    ctx.strokeStyle = `rgba(255, 230, 145, ${0.8 * alpha})`;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = `rgba(255, 245, 205, ${0.95 * alpha})`;
+    ctx.font = "bold 20px 'Orbitron', sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("ENCOUNTER!", center.x, center.y - 4);
+}
+
+function drawCinematicBars() {
+    if (!gameState.battle) {
+        return;
+    }
+    const topH = Math.round(canvas.height * 0.07);
+    ctx.fillStyle = "rgba(0, 0, 0, 0.42)";
+    ctx.fillRect(0, 0, canvas.width, topH);
+    ctx.fillRect(0, canvas.height - topH, canvas.width, topH);
+}
+
 function drawField() {
+    const zoom = gameState.view.zoom;
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    ctx.scale(zoom, zoom);
+    ctx.translate(-centerX, -centerY);
+
     drawBackground();
     drawWorldObjects();
     drawHealingItems();
@@ -1078,6 +1229,11 @@ function drawField() {
     });
 
     drawEffects();
+    drawBattleHandTags();
+    drawEncounterEffect();
+    ctx.restore();
+
+    drawCinematicBars();
 }
 
 function getSelectedMonster() {
@@ -1105,9 +1261,9 @@ function renderBattle() {
     ui.target.classList.remove("idle");
     ui.battleTimer.textContent = `残り ${Math.max(0, Math.ceil(battle.timer))} 秒`;
     ui.targetName.textContent = `${selected.base.name} (${starsText(selected.star)})`;
-    const turnLabel = battle.turnCooldown > 0
-        ? `次の手まで ${battle.turnCooldown.toFixed(1)}s`
-        : "手を選択";
+    const turnLabel = battle.phase === BATTLE_PHASE.ENCOUNTER
+        ? "会敵演出中"
+        : (battle.turnCooldown > 0 ? `次の手まで ${battle.turnCooldown.toFixed(1)}s` : "手を選択");
     const handLabel = battle.lastPlayerHand
         ? `前手: ${RPS_LABEL[battle.lastPlayerHand]} / ${RPS_LABEL[battle.lastMonsterHand]}`
         : "初手を選択";
@@ -1116,6 +1272,26 @@ function renderBattle() {
     const hpRate = clamp((battle.hp / selected.hpMax) * 100, 0, 100);
     ui.monsterHpBar.style.width = `${hpRate}%`;
     ui.monsterHpText.textContent = `${Math.max(0, Math.ceil(battle.hp))} / ${selected.hpMax}`;
+}
+
+function renderFieldRps() {
+    const battle = gameState.battle;
+    if (!battle) {
+        ui.fieldRpsOverlay.classList.add("hidden");
+        ui.fieldPlayerHand.textContent = "--";
+        ui.fieldMonsterHand.textContent = "--";
+        ui.fieldRpsRound.textContent = "0";
+        return;
+    }
+
+    ui.fieldRpsOverlay.classList.remove("hidden");
+    ui.fieldPlayerHand.textContent = battle.lastPlayerHand
+        ? RPS_LABEL[battle.lastPlayerHand]
+        : (battle.phase === BATTLE_PHASE.ENCOUNTER ? "構え" : "待機");
+    ui.fieldMonsterHand.textContent = battle.lastMonsterHand
+        ? RPS_LABEL[battle.lastMonsterHand]
+        : (battle.phase === BATTLE_PHASE.ENCOUNTER ? "構え" : "待機");
+    ui.fieldRpsRound.textContent = String(battle.round);
 }
 
 function renderPlayerStatus() {
@@ -1168,7 +1344,9 @@ function renderFieldInfo() {
     ui.selectedDistance.textContent = `ターゲット: ${selected.base.name} ${d}m`;
 
     if (inBattle) {
-        ui.mapHint.textContent = "戦闘中: じゃんけんで手を選択";
+        ui.mapHint.textContent = gameState.battle && gameState.battle.phase === BATTLE_PHASE.ENCOUNTER
+            ? "会敵演出中: まもなくじゃんけん開始"
+            : "戦闘中: じゃんけんで手を選択";
     } else if (d <= ENCOUNTER_RANGE) {
         ui.mapHint.textContent = `接敵可能: ${selected.base.name} を狩猟開始できます`;
     } else {
@@ -1182,7 +1360,8 @@ function renderActions() {
     const inBattle = Boolean(gameState.battle);
     const selected = getSelectedMonster();
     const near = selected ? distance(gameState.player, selected) <= ENCOUNTER_RANGE : false;
-    const locked = inBattle && gameState.battle && gameState.battle.turnCooldown > 0;
+    const locked = inBattle && gameState.battle
+        && (gameState.battle.phase !== BATTLE_PHASE.ACTIVE || gameState.battle.turnCooldown > 0);
 
     ui.rpsRockBtn.disabled = !inBattle || locked;
     ui.rpsScissorsBtn.disabled = !inBattle || locked;
@@ -1194,6 +1373,7 @@ function renderAll() {
     updateCamera();
     drawField();
     renderBattle();
+    renderFieldRps();
     renderPlayerStatus();
     renderFieldInfo();
     renderActions();
@@ -1220,6 +1400,7 @@ function gameLoop(now) {
 
     updateSelectedMonster();
     updateEffects(delta);
+    updateViewTransition(delta);
     renderAll();
 
     requestAnimationFrame(gameLoop);
